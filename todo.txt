@@ -4,7 +4,7 @@ X 2. Add ability to cancel and return values to before method.
 X 4. Move to a new folder and give project a good name.
 X 5. Add to Github.
 6. Create readme.md doc.
-7. Add ability to proxy an entire object.
+X 7. Add ability to proxy an entire object.
 8. Create Gruntfile to automate tests.
 9. Convert to fluent interface.
 10. Find out how to reference third party libraries in Javascript projects. Add proper references to qunit.

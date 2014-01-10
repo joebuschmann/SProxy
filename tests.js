@@ -99,3 +99,33 @@ test("Verify cancellation of executing the proxied function.", function(assert) 
     assert.equal(retVal, 23, "The \"before\" method should not cancel execution.");
 });
 
+test("Verify creating a proxy for all methods in an object.", function(assert) {
+    var beforeCount = 0,
+        afterCount = 0,
+        proxy,
+        obj = {
+            method1Called: false,
+            method2Called: false,
+            method1: function () {
+                this.method1Called = true;
+            },
+            method2: function () {
+                this.method2Called = true;
+            }
+        };
+    
+    proxy = SProxy.createProxyObject(obj, function () { beforeCount++; }, function () { afterCount++; });
+    
+    proxy.method1();
+    proxy.method2();
+    
+    assert.equal(obj.method1Called, true, "The original object should be the context for the proxy object.");
+    assert.equal(obj.method2Called, true, "The original object should be the context for the proxy object.");
+    assert.equal(proxy.method1Called, true, "Properties of the original object should be accessable through the proxy.");
+    assert.equal(proxy.method2Called, true, "Properties of the original object should be accessable through the proxy.");
+    
+    assert.equal(beforeCount, 2, "The before function should have been invoked.");
+    assert.equal(afterCount, 2, "The after function should have been invoked.");
+    
+    assert.equal(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+});
