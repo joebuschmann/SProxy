@@ -3,7 +3,56 @@ var SProxy = {};
 var installSProxy = function (ctx) {
     "use strict";
     
-    var createProxy = function (func, before, after, context) {
+    var validateAndReturnArgumentsAsDto = function () {
+        var validArgsMsg = "Arguments must be provided in one of the two following formats:\n\n" +
+                           "1. For a single argument, assume a DTO with func, before, after, and context properties.\n" +
+                           "2. For multiple arguments, assume up to four in the following order:\n" +
+                                "a. A function to proxy (required)\n" +
+                                "b. A before function (required if no \"after\" function is provided)\n" +
+                                "c. An after function (required if no \"before\" function is provided)\n" +
+                                "d. A context object to override \"this\" when executing the new proxy method (optional).\n";
+        
+        var argsDto = {
+            func: undefined,
+            before: undefined,
+            after: undefined,
+            context: undefined
+        };
+        
+        if (!arguments || arguments.length === 0) {
+            throw new Error("Invalid arguments. No arguments were supplied to the function.\n" + validArgsMsg);
+        } else if ((arguments.length === 1) && (typeof arguments[0] === "object")) {
+            // Arguments can be provided as a DTO with func, before, after, and context properties.
+            argsDto = arguments[0];
+        } else if (typeof arguments[0] === "function") {
+            // Arguments can also be provided as individual arguments.
+            // Consolidate these arguments into a single DTO.
+            argsDto.func = arguments[0];
+            argsDto.before = arguments[1];
+            argsDto.after = arguments[2];
+            argsDto.context = arguments[3];
+        } else {
+            throw new Error("Invalid arguments. " + validArgsMsg);
+        }
+        
+        if (!argsDto.func) {
+            throw new Error("No function was provided to proxy." + validArgsMsg);
+        }
+        
+        if ((!argsDto.before) && (!argsDto.after)) {
+            throw new Error("No functions were provided for the before and after arguments. At least one must be supplied.\n" + validArgsMsg);
+        }
+        
+        return argsDto;
+    };
+    
+    var createProxy = function () {
+        var args = validateAndReturnArgumentsAsDto.apply(this, arguments),
+            func = args.func,
+            before = args.before,
+            after = args.after,
+            context = args.context;
+        
         return function () {
             var that = context || this,
                 retContext,

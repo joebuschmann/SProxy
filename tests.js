@@ -1,28 +1,40 @@
 
 test("Verify before and after method execution.", function (assert) {
-    var beforeInvoked = false;
-    var functionInvoked = false;
-    var afterInvoked = false;
+    var beforeInvokedCount = 0;
+    var functionInvokedCount = 0;
+    var afterInvokedCount = 0;
     
     var before = function() {
-        beforeInvoked = true;
+        beforeInvokedCount++;
     };
     
     var func = function() {
-        functionInvoked = true;
+        functionInvokedCount++;
     };
     
     var after = function() {
-        afterInvoked = true;
+        afterInvokedCount++;
     };
     
+    // Create and test a proxy by passing arguments individually.
     var proxy = SProxy.createProxy(func, before, after);
     
     proxy();
     
-    assert.equal(beforeInvoked, true, "The before function should have been invoked.");
-    assert.equal(functionInvoked, true, "The proxied function should have been invoked.");
-    assert.equal(afterInvoked, true, "The after function should have been invoked.");
+    assert.strictEqual(beforeInvokedCount, 1, "The before function should have been invoked one time.");
+    assert.strictEqual(functionInvokedCount, 1, "The proxied function should have been invoked one time.");
+    assert.strictEqual(afterInvokedCount, 1, "The after function should have been invoked one time.");
+    
+    // Create and test a proxy by passing arguments as a DTO.
+    proxy = SProxy.createProxy({ func: func,
+                                 before: before,
+                                 after: after });
+    
+    proxy();
+    
+    assert.strictEqual(beforeInvokedCount, 2, "The before function should have been invoked two times.");
+    assert.strictEqual(functionInvokedCount, 2, "The proxied function should have been invoked two times.");
+    assert.strictEqual(afterInvokedCount, 2, "The after function should have been invoked two times.");
 });
 
 test("Verify correct arguments passed to before, after, and proxied function.", function (assert) {
@@ -49,19 +61,19 @@ test("Verify correct arguments passed to before, after, and proxied function.", 
     var slice = Array.prototype.slice;
     
     assert.ok(beforeArguments, "The before arguments should have a value.");
-    assert.equal(beforeArguments.length, 3, "The number of arguments should be 3.");
+    assert.strictEqual(beforeArguments.length, 3, "The number of arguments should be 3.");
     assert.deepEqual(slice.apply(beforeArguments), [4, 5, 6], "The arguments should be 4, 5, 6.");
     
     assert.ok(funcArguments, "The proxied function arguments should have a value.");
-    assert.equal(funcArguments.length, 3, "The number of arguments should be 3.");
+    assert.strictEqual(funcArguments.length, 3, "The number of arguments should be 3.");
     assert.deepEqual(slice.apply(funcArguments), [4, 5, 6], "The arguments should be 4, 5, 6.");
     
     assert.ok(afterArguments, "The after arguments should have a value.");
-    assert.equal(afterArguments.length, 3, "The number of arguments should be 3.");
+    assert.strictEqual(afterArguments.length, 3, "The number of arguments should be 3.");
     assert.deepEqual(slice.apply(afterArguments), [4, 5, 6], "The arguments should be 4, 5, 6.");
 });
 
-test("Verify \"this\" points to the object when creating a proxy for a method and no context is provided.", function (assert) {
+test("Verify \"this\" points to the correct object when creating a proxy for a method and no context is provided.", function (assert) {
     var anObject = {
         value1: 23,
         WhatIsValue1: function() {
@@ -71,9 +83,30 @@ test("Verify \"this\" points to the object when creating a proxy for a method an
     
     assert.strictEqual(anObject.WhatIsValue1(), 23, "The value for \"value1\" should come from the object and not global.");
 
-    anObject.WhatIsValue1 = SProxy.createProxy(anObject.WhatIsValue1, function() {}, function() {}, undefined);
+    anObject.WhatIsValue1 = SProxy.createProxy(anObject.WhatIsValue1, function () {});
     
     assert.strictEqual(anObject.WhatIsValue1(), 23, "The value for \"value1\" should come from the object and not global.");
+});
+
+test("Verify \"this\" points to the correct context if a custom context is provided.", function (assert) {
+    var context = {};
+    
+    var func = function () {
+        this.value1 = 23;
+        this.value2 = 45;
+    };
+
+    var proxy = SProxy.createProxy(func, function () {}, function () {}, context);
+    
+    proxy();
+    
+    assert.strictEqual(context.value1, 23, "The custom context should be altered by the proxy.");
+    assert.strictEqual(context.value2, 45, "The custom context should be altered by the proxy.");
+    
+    var global = (function () { return this; })();
+    
+    assert.strictEqual(global.value1, undefined, "Value 1 should not exist in the global scope.");
+    assert.strictEqual(global.value2, undefined, "Value 2 should not exist in the global scope.");
 });
 
 test("Verify cancellation of executing the proxied function.", function(assert) {
@@ -96,7 +129,7 @@ test("Verify cancellation of executing the proxied function.", function(assert) 
     cancel = true;
     retVal = proxy();
     
-    assert.equal(retVal, 23, "The \"before\" method should not cancel execution.");
+    assert.strictEqual(retVal, 23, "The \"before\" method should not cancel execution.");
 });
 
 test("Verify creating a proxy for all methods in an object.", function(assert) {
@@ -119,13 +152,30 @@ test("Verify creating a proxy for all methods in an object.", function(assert) {
     proxy.method1();
     proxy.method2();
     
-    assert.equal(obj.method1Called, true, "The original object should be the context for the proxy object.");
-    assert.equal(obj.method2Called, true, "The original object should be the context for the proxy object.");
-    assert.equal(proxy.method1Called, true, "Properties of the original object should be accessable through the proxy.");
-    assert.equal(proxy.method2Called, true, "Properties of the original object should be accessable through the proxy.");
+    assert.ok(obj.method1Called, "The original object should be the context for the proxy object.");
+    assert.ok(obj.method2Called, "The original object should be the context for the proxy object.");
+    assert.ok(proxy.method1Called, "Properties of the original object should be accessable through the proxy.");
+    assert.ok(proxy.method2Called, "Properties of the original object should be accessable through the proxy.");
     
-    assert.equal(beforeCount, 2, "The before function should have been invoked.");
-    assert.equal(afterCount, 2, "The after function should have been invoked.");
+    assert.strictEqual(beforeCount, 2, "The before function should have been invoked.");
+    assert.strictEqual(afterCount, 2, "The after function should have been invoked.");
     
-    assert.equal(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+    assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+});
+
+test("Verify creating a proxy doesn't alter the original object.", function(assert) {
+    var original = {
+        method1: function() {
+           return 23;
+        }
+    };
+    
+    var before = function() {
+        return { cancel: true, returnValue: 45 };
+    };
+    
+    var proxy = SProxy.createProxyObject(original, before);
+    
+    assert.strictEqual(original.method1(), 23, "The original object should not be altered when creating the proxy.");
+    assert.strictEqual(proxy.method1(), 45, "The proxy object should return a different value.");
 });
