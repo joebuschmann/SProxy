@@ -8,5 +8,6 @@ X 7. Add ability to proxy an entire object.
 8. Create Gruntfile to automate tests.
 9. Convert to fluent interface.
 10. Find out how to reference third party libraries in Javascript projects. Add proper references to qunit.
-11. Test nesting of before and after functions and verify order of execution.
+X 11. Test nesting of before and after functions and verify order of execution.
 12. Write tests to verify exception when bad arguments are passed.
+13. Add proxy creation functions to Object.Prototype().

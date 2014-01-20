@@ -200,3 +200,19 @@ test("Verify the return value is passed to the after function when it is defined
     assert.strictEqual(lastArg, 23, "The return value should have a value of 23.");
 });
 
+test("Verify nesting of before and after functions by creating a proxy of a proxy.", function (assert) {
+    var executionOrder = [],
+        before1 = function () { executionOrder.push("before1"); },
+        before2 = function () { executionOrder.push("before2"); },
+        after1 = function () { executionOrder.push("after1"); },
+        after2 = function () { executionOrder.push("after2"); },
+        func = function () {};
+    
+    var proxy = SProxy.createProxy({ func: func, before: before1, after: after1 });
+    proxy = SProxy.createProxy({ func: proxy, before: before2, after: after2 });
+    
+    proxy();
+    
+    assert.deepEqual(executionOrder, ["before2", "before1", "after1", "after2"],
+                     "The execution order of before and after functions should be before2(), before1(), after1(), after2()."); 
+});
