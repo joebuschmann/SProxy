@@ -163,7 +163,7 @@ test("Verify creating a proxy for all methods in an object.", function(assert) {
     assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
 });
 
-test("Verify creating a proxy doesn't alter the original object.", function(assert) {
+test("Verify creating a proxy doesn't alter the original object.", function (assert) {
     var original = {
         method1: function() {
            return 23;
@@ -179,3 +179,24 @@ test("Verify creating a proxy doesn't alter the original object.", function(asse
     assert.strictEqual(original.method1(), 23, "The original object should not be altered when creating the proxy.");
     assert.strictEqual(proxy.method1(), 45, "The proxy object should return a different value.");
 });
+
+test("Verify the return value isn't passed to the after function when it is undefined.", function (assert) {
+    var argCount = 0,
+        proxy = SProxy.createProxy({ func: function () {}, after: function () { argCount = arguments.length; }});
+    
+    proxy(1, 2, 3);
+    
+    assert.strictEqual(argCount, 3, "Because there is no return value from the proxied function, there should not be an extra argument passed to the \"after\" function.");
+});
+
+test("Verify the return value is passed to the after function when it is defined.", function (assert) {
+    var argCount = 0,
+        lastArg,
+        proxy = SProxy.createProxy({ func: function () { return 23; }, after: function () { argCount = arguments.length; lastArg = arguments[argCount - 1]; }});
+    
+    proxy(1, 2, 3);
+    
+    assert.strictEqual(argCount, 4, "The return value of the proxied function should be passed to the \"after\" function as the last argument.");
+    assert.strictEqual(lastArg, 23, "The return value should have a value of 23.");
+});
+

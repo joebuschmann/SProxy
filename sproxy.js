@@ -36,7 +36,7 @@ var installSProxy = function (ctx) {
         }
         
         if (!argsDto.func) {
-            throw new Error("No function was provided to proxy." + validArgsMsg);
+            throw new Error("No function was provided to proxy.\n" + validArgsMsg);
         }
         
         if ((!argsDto.before) && (!argsDto.after)) {
@@ -70,7 +70,15 @@ var installSProxy = function (ctx) {
             retVal = func.apply(that, arguments);
             
             if (after) {
-                after.apply(that, arguments);
+                var afterArgs = arguments;
+                
+                if (retVal) {
+                    var slice = Array.prototype.slice;
+                    afterArgs = slice.apply(arguments, [0]);
+                    afterArgs.push(retVal);
+                }
+                
+                after.apply(that, afterArgs);
             }
             
             return retVal;
