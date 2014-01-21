@@ -3,6 +3,8 @@ var SProxy = {};
 var installSProxy = function (ctx) {
     "use strict";
     
+    var global = (function () { return this })();
+    
     var validateAndReturnArgumentsAsDto = function () {
         var validArgsMsg = "Arguments must be provided in one of the two following formats:\n\n" +
                            "1. For a single argument, assume a DTO with func, before, after, and context properties.\n" +
@@ -46,7 +48,7 @@ var installSProxy = function (ctx) {
         return argsDto;
     };
     
-    var createProxy = function () {
+    var createProxyFunction = function () {
         var args = validateAndReturnArgumentsAsDto.apply(this, arguments),
             func = args.func,
             before = args.before,
@@ -91,23 +93,42 @@ var installSProxy = function (ctx) {
         return new Proxy();
     };
     
-    ctx.createProxy = createProxy;
-    
-    ctx.createProxyObject = function (obj, before, after) {
+    var createProxyObject = function (obj, before, after) {
         var proxy = makeProxyObject(obj), item, func;
         
         // Enumerate each method in the object and add a proxy method.
         // The original object is used as the context instead of the proxy
         // which keeps "this" pointing to the right place in the original methods.
         for (item in proxy) {
-            if (typeof (proxy[item]) === "function") {
+            if (obj.hasOwnProperty(item) && typeof (proxy[item]) === "function") {
                 func = proxy[item];
-                proxy[item] = createProxy(func, before, after, obj);
+                proxy[item] = createProxyFunction(func, before, after, obj);
             }
         }
         
         return proxy;
     };
+    
+    ctx.createProxy = createProxyFunction;
+    
+    ctx.createProxyObject = createProxyObject;
+    
+    if (!Object.prototype.createProxy) {
+        Object.prototype.createProxy = function (before, after, context) {
+            if (this === global) {
+                throw new Error("A proxy cannot be created for the global object.");
+            }
+            
+            if (typeof this === "function") {
+                return createProxyFunction(this, before, after, context);
+            }
+            else if (typeof this === "object") {
+                return createProxyObject(this, before, after);
+            }
+            
+            throw new Error("A proxy can only be created for functions and objects.");
+        };
+    }
 };
 
 installSProxy(SProxy);

@@ -35,6 +35,15 @@ test("Verify before and after method execution.", function (assert) {
     assert.strictEqual(beforeInvokedCount, 2, "The before function should have been invoked two times.");
     assert.strictEqual(functionInvokedCount, 2, "The proxied function should have been invoked two times.");
     assert.strictEqual(afterInvokedCount, 2, "The after function should have been invoked two times.");
+    
+    // Create and test a proxy by invoking createProxy from Object.prototype.
+    proxy = func.createProxy(before, after);
+    
+    proxy();
+    
+    assert.strictEqual(beforeInvokedCount, 3, "The before function should have been invoked three times.");
+    assert.strictEqual(functionInvokedCount, 3, "The proxied function should have been invoked three times.");
+    assert.strictEqual(afterInvokedCount, 3, "The after function should have been invoked three times.");
 });
 
 test("Verify correct arguments passed to before, after, and proxied function.", function (assert) {
@@ -159,6 +168,22 @@ test("Verify creating a proxy for all methods in an object.", function(assert) {
     
     assert.strictEqual(beforeCount, 2, "The before function should have been invoked.");
     assert.strictEqual(afterCount, 2, "The after function should have been invoked.");
+    
+    assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+    
+    // Create the proxy using createProxy from Object.prototype.
+    proxy = obj.createProxy(function () { beforeCount++; }, function () { afterCount++; });
+    
+    proxy.method1();
+    proxy.method2();
+    
+    assert.ok(obj.method1Called, "The original object should be the context for the proxy object.");
+    assert.ok(obj.method2Called, "The original object should be the context for the proxy object.");
+    assert.ok(proxy.method1Called, "Properties of the original object should be accessable through the proxy.");
+    assert.ok(proxy.method2Called, "Properties of the original object should be accessable through the proxy.");
+    
+    assert.strictEqual(beforeCount, 4, "The before function should have been invoked.");
+    assert.strictEqual(afterCount, 4, "The after function should have been invoked.");
     
     assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
 });
