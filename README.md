@@ -17,20 +17,23 @@ A function proxy sandwiches a target function between two functions that provide
 
 Function proxies can be created in one of two ways.
 
-SProxy.createProxy()
+####SProxy.createProxy()
 
 The SProxy namespace exposes the function `createProxy()` with two overloads. The first takes four arguments.
 
-    var context = { targetInvoked = false, beforeInvoked: false, afterInvoked: false },
-        targetFunc = function () { context.targetInvoked = true; },
-        before = function () { context.beforeInvoked = true; },
-        after = function () { context.afterInvoked = true; },
-        proxy = SProxy.createProxy(func, before, after, context);
-        
-    proxy();
+```Javascript
+var context = { targetInvoked = false, beforeInvoked: false, afterInvoked: false },
+    targetFunc = function () { context.targetInvoked = true; },
+    before = function () { context.beforeInvoked = true; },
+    after = function () { context.afterInvoked = true; },
+    proxy = SProxy.createProxy(func, before, after, context);
     
-    
+proxy();
+
+assert.ok(context.targetInvoked, "The proxy should execute the target function.");
+assert.ok(context.beforeInvoked, "The proxy should execute the before function.");
+assert.ok(context.afterInvoked, "The proxy should execute the after function.");
+```
 
 
-
-Object.prototype.createProxy()
+####Object.prototype.createProxy()
