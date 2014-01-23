@@ -3,7 +3,7 @@ var SProxy = {};
 var installSProxy = function (ctx) {
     "use strict";
     
-    var global = (function () { return this })();
+    var global = (function () { return this; })();
     
     var validateAndReturnArgumentsAsDto = function () {
         var validArgsMsg = "Arguments must be provided in one of the two following formats:\n\n" +
