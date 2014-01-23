@@ -1,16 +1,36 @@
 SProxy
 ======
 
-SProxy is a Javascript library for creating proxies for functions and objects. The "S" stands for simple.
+SProxy is a Javascript library for creating proxies for functions and objects. A proxy can intercept function calls to execute pre-precessing and/or post-processing logic, cancel a function call, and alter a function's return value.
+
+The "S" stands for simple.
 
 Installation
 ------------
 
-The SProxy logic is contained in the file sproxy.js. The function `installSProxy` takes a single context argument and installs the necessary functions into that context. By default, installation occurs for the object or namespace `SProxy`.
+The SProxy logic is contained in the file sproxy.js. The function `installSProxy(ctx)` takes a single context argument and installs the necessary behavior into that context. By default, installation occurs for the object or namespace `SProxy`, but consumers can choose to install it elsewhere such as the global object.
 
 Function Proxies
 ----------------
 
-A function proxy sandwiches a function between two functions, one of which executes before the target function and provides pre-processing behavior and the other executes after and provides post-processing behavior. At least one is required.
+A function proxy sandwiches a target function between two functions that provide pre-processing and/or post-processing behavior. At least one is required. In addition, the value of `this` can be changed to point the target function to a different context.
 
-Function proxies can be created in one of three ways. The first is to 
+Function proxies can be created in one of two ways.
+
+SProxy.createProxy()
+
+The SProxy namespace exposes the function `createProxy()` with two overloads. The first takes four arguments.
+
+    var context = { targetInvoked = false, beforeInvoked: false, afterInvoked: false },
+        targetFunc = function () { context.targetInvoked = true; },
+        before = function () { context.beforeInvoked = true; },
+        after = function () { context.afterInvoked = true; },
+        proxy = SProxy.createProxy(func, before, after, context);
+        
+    proxy();
+    
+    
+
+
+
+Object.prototype.createProxy()
