@@ -241,3 +241,53 @@ test("Verify nesting of before and after functions by creating a proxy of a prox
     assert.deepEqual(executionOrder, ["before2", "before1", "after1", "after2"],
                      "The execution order of before and after functions should be before2(), before1(), after1(), after2()."); 
 });
+
+test("README.md Sample 1", function (assert) {
+    var context = { targetInvoked: false, beforeInvoked: false, afterInvoked: false },
+        targetFunc = function () { this.targetInvoked = true; },
+        before = function () { this.beforeInvoked = true; },
+        after = function () { this.afterInvoked = true; },
+        
+        // Arguments are specified individually.
+        proxy = SProxy.createProxy(targetFunc, before, after, context);
+        
+    proxy();
+    
+    assert.ok(context.targetInvoked, "The proxy should execute the target function.");
+    assert.ok(context.beforeInvoked, "The proxy should execute the before function.");
+    assert.ok(context.afterInvoked, "The proxy should execute the after function.");
+});
+
+test("README.md Sample 2", function (assert) {
+    var context = { targetInvoked: false, beforeInvoked: false, afterInvoked: false },
+        dtoArgs = { func: function () { this.targetInvoked = true; },
+                    before: function () { this.beforeInvoked = true; },
+                    after: function () { this.afterInvoked = true; },
+                    context: context },
+        
+        // Arguments are provided in a single DTO objects rather than individually.
+        proxy = SProxy.createProxy(dtoArgs);
+        
+    proxy();
+    
+    assert.ok(context.targetInvoked, "The proxy should execute the target function.");
+    assert.ok(context.beforeInvoked, "The proxy should execute the before function.");
+    assert.ok(context.afterInvoked, "The proxy should execute the after function.");
+});
+
+test("README.md Sample 3", function (assert) {
+    var context = { targetInvoked: false, beforeInvoked: false, afterInvoked: false },
+        targetFunc = function () { this.targetInvoked = true; },
+        before = function () { this.beforeInvoked = true; },
+        after = function () { this.afterInvoked = true; },
+        
+        // createProxy is invoked as a method of the target function.
+        proxy = targetFunc.createProxy(before, after, context);
+        
+    proxy();
+    
+    assert.ok(context.targetInvoked, "The proxy should execute the target function.");
+    assert.ok(context.beforeInvoked, "The proxy should execute the before function.");
+    assert.ok(context.afterInvoked, "The proxy should execute the after function.");
+});
+
