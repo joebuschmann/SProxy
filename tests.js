@@ -242,7 +242,23 @@ test("Verify nesting of before and after functions by creating a proxy of a prox
                      "The execution order of before and after functions should be before2(), before1(), after1(), after2()."); 
 });
 
-test("README.md Sample 1", function (assert) {
+test("README.md installSProxy Sample 1", function (assert) {
+    // Install into a custom object.
+    var customContext = {};
+    
+    installSProxy(customContext);
+    
+    assert.ok(customContext.createProxy, "The method createProxy() should be available from the custom context object.");
+    assert.ok(customContext.createProxyObject, "The method createProxyObject() should be available from the custom context object.");
+    
+    // Install into global.
+    installSProxy(this);
+    
+    assert.ok(customContext.createProxy, "The method createProxy() should be available from the global object.");
+    assert.ok(customContext.createProxyObject, "The method createProxyObject() should be available from the global object.");
+});
+
+test("README.md createProxy Sample 1", function (assert) {
     var context = { targetInvoked: false, beforeInvoked: false, afterInvoked: false },
         targetFunc = function () { this.targetInvoked = true; },
         before = function () { this.beforeInvoked = true; },
@@ -258,7 +274,7 @@ test("README.md Sample 1", function (assert) {
     assert.ok(context.afterInvoked, "The proxy should execute the after function.");
 });
 
-test("README.md Sample 2", function (assert) {
+test("README.md createProxy Sample 2", function (assert) {
     var context = { targetInvoked: false, beforeInvoked: false, afterInvoked: false },
         dtoArgs = { func: function () { this.targetInvoked = true; },
                     before: function () { this.beforeInvoked = true; },
@@ -275,7 +291,7 @@ test("README.md Sample 2", function (assert) {
     assert.ok(context.afterInvoked, "The proxy should execute the after function.");
 });
 
-test("README.md Sample 3", function (assert) {
+test("README.md createProxy Sample 3", function (assert) {
     var context = { targetInvoked: false, beforeInvoked: false, afterInvoked: false },
         targetFunc = function () { this.targetInvoked = true; },
         before = function () { this.beforeInvoked = true; },
