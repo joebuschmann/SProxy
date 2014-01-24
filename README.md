@@ -10,6 +10,22 @@ Installation
 
 The SProxy logic is contained in the file sproxy.js. The function `installSProxy(ctx)` takes a single context argument and installs the necessary behavior into that context. By default, installation occurs for the object or namespace `SProxy`, but consumers can choose to install it elsewhere such as the global object.
 
+```Javascript
+    // Install into a custom object.
+    var customContext = {};
+    
+    installSProxy(customContext);
+    
+    assert.ok(customContext.createProxy, "The method createProxy() should be available from the custom context object.");
+    assert.ok(customContext.createProxyObject, "The method createProxyObject() should be available from the custom context object.");
+    
+    // Install into global.
+    installSProxy(this);
+    
+    assert.ok(customContext.createProxy, "The method createProxy() should be available from the global object.");
+    assert.ok(customContext.createProxyObject, "The method createProxyObject() should be available from the global object.");
+```
+
 Function Proxies
 ----------------
 
