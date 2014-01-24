@@ -15,24 +15,38 @@ Function Proxies
 
 A function proxy sandwiches a target function between two functions that provide pre-processing and/or post-processing behavior. At least one is required. In addition, the value of `this` can be changed to point the target function to a different context.
 
-Function proxies can be created in one of two ways.
+####Syntax
 
-####SProxy.createProxy()
+    SProxy.createProxy(func, before, after, context)
 
-The SProxy namespace exposes the function `createProxy()` with two overloads. The first takes four arguments.
+#####Arguments
+
+<dl>
+  <dt>func</dt>
+  <dd>The target function whose behavior will be modified by the proxy function.</dd>
+  <dt>before</dt>
+  <dd>A function that will execute before the target. Optional if after is specified.</dd>
+  <dt>after</dt>
+  <dd>A function that will execute after the target. Optional if before is specified.</dd>
+  <dt>context</dt>
+  <dd>An optional object to use for this when executing the proxy function.</dd>
+</dl>
+
+
+#####Example
 
 ```Javascript
-var context = { targetInvoked = false, beforeInvoked: false, afterInvoked: false },
-    targetFunc = function () { context.targetInvoked = true; },
-    before = function () { context.beforeInvoked = true; },
-    after = function () { context.afterInvoked = true; },
-    proxy = SProxy.createProxy(func, before, after, context);
+    var context = { targetInvoked: false, beforeInvoked: false, afterInvoked: false },
+        targetFunc = function () { this.targetInvoked = true; },
+        before = function () { this.beforeInvoked = true; },
+        after = function () { this.afterInvoked = true; },
+        proxy = SProxy.createProxy(targetFunc, before, after, context);
+        
+    proxy();
     
-proxy();
-
-assert.ok(context.targetInvoked, "The proxy should execute the target function.");
-assert.ok(context.beforeInvoked, "The proxy should execute the before function.");
-assert.ok(context.afterInvoked, "The proxy should execute the after function.");
+    assert.ok(context.targetInvoked, "The proxy should execute the target function.");
+    assert.ok(context.beforeInvoked, "The proxy should execute the before function.");
+    assert.ok(context.afterInvoked, "The proxy should execute the after function.");
 ```
 
 
