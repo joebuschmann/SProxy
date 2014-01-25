@@ -3,7 +3,7 @@ X 2. Add ability to cancel and return values to before method.
 X 3. Add return value to arguments list into after method so after method can alter it.
 X 4. Move to a new folder and give project a good name.
 X 5. Add to Github.
-6. Create readme.md doc.
+X 6. Create readme.md doc.
 X 7. Add ability to proxy an entire object.
 8. Create Gruntfile to automate tests.
 9. Convert to fluent interface.
