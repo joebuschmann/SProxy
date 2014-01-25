@@ -1,5 +1,5 @@
-SProxy
-======
+SProxy - Simple Proxy Creation
+==============================
 
 SProxy is a Javascript library for creating proxies for functions and objects. A proxy can intercept function calls to execute pre-precessing and/or post-processing logic, cancel a function call, and alter a function's return value.
 
