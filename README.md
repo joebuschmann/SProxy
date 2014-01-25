@@ -141,9 +141,111 @@ A function proxy sandwiches a target function between two functions that provide
 Object Proxies
 --------------
 
-TODO
+An object proxy wraps a target object and replaces each method with a proxy method. The target object is not altered. Instead a new object is created with the original as its prototype. Each proxy method will retain the `this` reference to the target object.
+
+####Syntax 1
+
+    SProxy.createProxyObject(obj, before, after)
+
+#####Arguments
+
+<dl>
+  <dt>obj</dt>
+  <dd>A target object that will have each method replaced by a proxy method.</dd>
+  <dt>before</dt>
+  <dd>A function that will execute before the target. Optional if after is specified.</dd>
+  <dt>after</dt>
+  <dd>A function that will execute after the target. Optional if before is specified.</dd>
+  <dt>returns</dt>
+  <dd>A new object that has each method replaced by a proxy method.</dd>
+</dl>
+
+
+#####Example
+
+```Javascript
+    var beforeCount = 0,
+        afterCount = 0,
+        proxy,
+        obj = {
+            method1Called: false,
+            method2Called: false,
+            method1: function () {
+                this.method1Called = true;
+            },
+            method2: function () {
+                this.method2Called = true;
+            }
+        };
+    
+    proxy = SProxy.createProxyObject(obj, function () { beforeCount++; }, function () { afterCount++; });
+    
+    proxy.method1();
+    proxy.method2();
+    
+    assert.ok(obj.method1Called, "The original object should be the context for the proxy object.");
+    assert.ok(obj.method2Called, "The original object should be the context for the proxy object.");
+    assert.ok(proxy.method1Called, "Properties of the original object should be accessable through the proxy.");
+    assert.ok(proxy.method2Called, "Properties of the original object should be accessable through the proxy.");
+    
+    assert.strictEqual(beforeCount, 2, "The before function should have been invoked.");
+    assert.strictEqual(afterCount, 2, "The after function should have been invoked.");
+    
+    assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+```
+
+####Syntax 2
+
+    Object.prototype.createProxy(before, after)
+
+#####Arguments
+
+<dl>
+  <dt>before</dt>
+  <dd>A function that will execute before the target. Optional if after is specified.</dd>
+  <dt>after</dt>
+  <dd>A function that will execute after the target. Optional if before is specified.</dd>
+  <dt>returns</dt>
+  <dd>A new object that has each method replaced by a proxy method.</dd>
+</dl>
+
+
+#####Example
+
+```Javascript
+    var beforeCount = 0,
+        afterCount = 0,
+        proxy,
+        obj = {
+            method1Called: false,
+            method2Called: false,
+            method1: function () {
+                this.method1Called = true;
+            },
+            method2: function () {
+                this.method2Called = true;
+            }
+        };
+    
+    proxy = obj.createProxy(function () { beforeCount++; }, function () { afterCount++; });
+    
+    proxy.method1();
+    proxy.method2();
+    
+    assert.ok(obj.method1Called, "The original object should be the context for the proxy object.");
+    assert.ok(obj.method2Called, "The original object should be the context for the proxy object.");
+    assert.ok(proxy.method1Called, "Properties of the original object should be accessable through the proxy.");
+    assert.ok(proxy.method2Called, "Properties of the original object should be accessable through the proxy.");
+    
+    assert.strictEqual(beforeCount, 2, "The before function should have been invoked.");
+    assert.strictEqual(afterCount, 2, "The after function should have been invoked.");
+    
+    assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+```
 
 Modifying the Return Value
 --------------------------
 
-TODO
+The execution of a proxied function can be short-circuited by the `before` function. To do so, `before` should return an object with two properties `cancel` and `returnValue`. When `cancel` is true, the proxy immediately returns the value supplied by `returnValue`. Neither the original nor the `after` function will execute.
+
+If execution is not cancelled, then the original and `after` functions execute, and the return value is appended to the argument list supplied to `after`.
