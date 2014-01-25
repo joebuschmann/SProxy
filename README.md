@@ -138,3 +138,12 @@ A function proxy sandwiches a target function between two functions that provide
     assert.ok(context.afterInvoked, "The proxy should execute the after function.");
 ```
 
+Object Proxies
+--------------
+
+TODO
+
+Modifying the Return Value
+--------------------------
+
+TODO
