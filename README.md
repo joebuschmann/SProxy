@@ -26,6 +26,39 @@ The SProxy logic is contained in the file sproxy.js. The function `installSProxy
     assert.ok(customContext.createProxyObject, "The method createProxyObject() should be available from the global object.");
 ```
 
+Quick Start
+-----------
+
+Say you want a function `before` to execute before another function `func`. You can create a proxy to do that:
+
+    var proxy = SProxy.createProxy(func, before);
+
+What about after?
+
+    var proxy = SProxy.createProxy(func, undefined, after);
+
+What about both?
+
+    var proxy = SProxy.createProxy(func, before, after);
+
+If you want to point `this` to a different context `newContext`, do this:
+
+    var proxy = SProxy.createProxy(func, before, after, newContext);
+
+You can also cancel the invocation of `func` and optionally return a different value.
+
+    var before = function () {
+        if (this.state === undefined) {
+            // Whoops, state is not defined!
+            // Don't bother to continue and return a valid state.
+            return { cancel: true, returnValue: { state: open } };
+        }
+    };
+
+You can create a proxy for an entire object. A new object will be created with each method replaced by a proxy.
+
+    var proxy = SProxy.createProxyObject(anObject, before, after);
+
 Function Proxies
 ----------------
 
