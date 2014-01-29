@@ -31,22 +31,31 @@ Quick Start
 
 Say you want a function `before` to execute before another function `func`. You can create a proxy to do that:
 
+```Javascript
     var proxy = SProxy.createProxy(func, before);
+```
 
 What about after?
 
+```Javascript
     var proxy = SProxy.createProxy(func, undefined, after);
+```
 
 What about both?
 
+```Javascript
     var proxy = SProxy.createProxy(func, before, after);
+```
 
 If you want to point `this` to a different context `newContext`, do this:
 
+```Javascript
     var proxy = SProxy.createProxy(func, before, after, newContext);
+```
 
 You can also cancel the invocation of `func` and optionally return a different value.
 
+```Javascript
     var before = function () {
         if (this.state === undefined) {
             // Whoops, state is not defined!
@@ -54,10 +63,15 @@ You can also cancel the invocation of `func` and optionally return a different v
             return { cancel: true, returnValue: { state: open } };
         }
     };
+```
 
-You can create a proxy for an entire object. A new object will be created with each method replaced by a proxy.
+You can create a proxy for an entire object.
 
+```Javascript
+    // proxy is a new object with all the methods from anObject replaced by a proxy method.
+    // anObject is the prototype for proxy and is unchanged.
     var proxy = SProxy.createProxyObject(anObject, before, after);
+```
 
 Function Proxies
 ----------------
