@@ -20,6 +20,24 @@ var installSProxy = function (ctx) {
         }
     };
     
+    var addReturnValueToArgumentsArray = function (args, retVal) {
+        var newArgs = args;
+        
+        if (retVal) {
+            var slice = Array.prototype.slice;
+            newArgs = slice.apply(args, [0]);
+            newArgs.push(retVal);
+        }
+        
+        return newArgs;
+    };
+    
+    var makeProxyObject = function (obj) {
+        var Proxy = function () {};
+        Proxy.prototype = obj;
+        return new Proxy();
+    };
+    
     var createProxyFunction = function (func, options) {
         validateOptions(options);
         
@@ -44,25 +62,17 @@ var installSProxy = function (ctx) {
             retVal = func.apply(that, arguments);
             
             if (after) {
-                var afterArgs = arguments;
+                var newArgs = addReturnValueToArgumentsArray(arguments, retVal);
+                                
+                retContext = after.apply(that, newArgs);
                 
-                if (retVal) {
-                    var slice = Array.prototype.slice;
-                    afterArgs = slice.apply(arguments, [0]);
-                    afterArgs.push(retVal);
+                if (retContext && retContext.cancel) {
+                    return retContext.returnValue;
                 }
-                
-                after.apply(that, afterArgs);
             }
             
             return retVal;
         };
-    };
-    
-    var makeProxyObject = function (obj) {
-        var Proxy = function () {};
-        Proxy.prototype = obj;
-        return new Proxy();
     };
     
     var createProxyObject = function (obj, options) {

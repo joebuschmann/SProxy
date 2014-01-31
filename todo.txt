@@ -6,7 +6,7 @@ X 5. Add to Github.
 X 6. Create readme.md doc.
 X 7. Add ability to proxy an entire object.
 8. Create Gruntfile to automate tests.
-9. Convert to fluent interface.
+CANCELLED 9. Convert to fluent interface.
 10. Find out how to reference third party libraries in Javascript projects. Add proper references to qunit.
 X 11. Test nesting of before and after functions and verify order of execution.
 12. Write tests to verify exception when bad arguments are passed.
