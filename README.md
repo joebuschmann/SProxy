@@ -249,3 +249,7 @@ Modifying the Return Value
 The execution of a proxied function can be short-circuited by the `before` function. To do so, `before` should return an object with two properties `cancel` and `returnValue`. When `cancel` is true, the proxy immediately returns the value supplied by `returnValue`. Neither the original nor the `after` function will execute.
 
 If execution is not cancelled, then the original and `after` functions execute, and the return value is appended to the argument list supplied to `after`.
+
+**************
+
+Copyright (c) 2013-2014 Joseph Buschmann. This software is licensed under the MIT License.
