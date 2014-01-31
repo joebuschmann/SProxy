@@ -17,13 +17,11 @@ The SProxy logic is contained in the file sproxy.js. The function `installSProxy
     installSProxy(customContext);
     
     assert.ok(customContext.createProxy, "The method createProxy() should be available from the custom context object.");
-    assert.ok(customContext.createProxyObject, "The method createProxyObject() should be available from the custom context object.");
-    
+
     // Install into global.
     installSProxy(this);
     
     assert.ok(customContext.createProxy, "The method createProxy() should be available from the global object.");
-    assert.ok(customContext.createProxyObject, "The method createProxyObject() should be available from the global object.");
 ```
 
 Quick Start
@@ -32,25 +30,25 @@ Quick Start
 Say you want a function `before` to execute before another function `func`. You can create a proxy to do that:
 
 ```Javascript
-    var proxy = SProxy.createProxy(func, before);
+    var proxy = SProxy.createProxy(func, { before: before });
 ```
 
 What about after?
 
 ```Javascript
-    var proxy = SProxy.createProxy(func, undefined, after);
+    var proxy = SProxy.createProxy(func, { after: after });
 ```
 
 What about both?
 
 ```Javascript
-    var proxy = SProxy.createProxy(func, before, after);
+    var proxy = SProxy.createProxy(func, { before: before, after: after });
 ```
 
 If you want to point `this` to a different context `newContext`, do this:
 
 ```Javascript
-    var proxy = SProxy.createProxy(func, before, after, newContext);
+    var proxy = SProxy.createProxy(func, { before: before, after: after, context: newContext });
 ```
 
 You can also cancel the invocation of `func` and optionally return a different value.
@@ -70,7 +68,7 @@ You can create a proxy for an entire object.
 ```Javascript
     // proxy is a new object with all the methods from anObject replaced by a proxy method.
     // anObject is the prototype for proxy and is unchanged.
-    var proxy = SProxy.createProxyObject(anObject, before, after);
+    var proxy = SProxy.createProxy(anObject, { before: before, after: after });
 ```
 
 Function Proxies
@@ -80,21 +78,17 @@ A function proxy sandwiches a target function between two functions that provide
 
 ####Syntax 1
 
-    SProxy.createProxy(func, before, after, context)
+    SProxy.createProxy(func, options)
 
 #####Arguments
 
 <dl>
   <dt>func</dt>
   <dd>The target function whose behavior will be modified by the proxy function.</dd>
-  <dt>before</dt>
-  <dd>A function that will execute before the target. Optional if after is specified.</dd>
-  <dt>after</dt>
-  <dd>A function that will execute after the target. Optional if before is specified.</dd>
-  <dt>context</dt>
-  <dd>An optional object to use for this when executing the proxy function. If not provided, this will revert to the default behavior.</dd>
+  <dt>options</dt>
+  <dd>Different options for creating the proxy. </dd>
   <dt>returns</dt>
-  <dd>A new function that invokes func, before, and after with this pointed to the provided context.</dd>
+  <dd>A new function that invokes func as specified by options.</dd>
 </dl>
 
 
@@ -105,9 +99,7 @@ A function proxy sandwiches a target function between two functions that provide
         targetFunc = function () { this.targetInvoked = true; },
         before = function () { this.beforeInvoked = true; },
         after = function () { this.afterInvoked = true; },
-        
-        // Arguments are specified individually.
-        proxy = SProxy.createProxy(targetFunc, before, after, context);
+        proxy = SProxy.createProxy(targetFunc, { before: before, after: after, context: context });
         
     proxy();
     
@@ -118,50 +110,13 @@ A function proxy sandwiches a target function between two functions that provide
 
 ####Syntax 2
 
-    SProxy.createProxy(dtoArgs)
+    Object.prototype.createProxy(options)
 
 #####Arguments
 
 <dl>
-  <dt>dtoArgs</dt>
-  <dd>An object with four properties, func, before, after, and context.</dd>
-  <dt>returns</dt>
-  <dd>A new function that invokes func, before, and after with this pointed to the provided context.</dd>
-</dl>
-
-
-#####Example
-
-```Javascript
-    var context = { targetInvoked: false, beforeInvoked: false, afterInvoked: false },
-        dtoArgs = { func: function () { this.targetInvoked = true; },
-                    before: function () { this.beforeInvoked = true; },
-                    after: function () { this.afterInvoked = true; },
-                    context: context },
-        
-        // Arguments are provided in a single DTO objects rather than individually.
-        proxy = SProxy.createProxy(dtoArgs);
-        
-    proxy();
-    
-    assert.ok(context.targetInvoked, "The proxy should execute the target function.");
-    assert.ok(context.beforeInvoked, "The proxy should execute the before function.");
-    assert.ok(context.afterInvoked, "The proxy should execute the after function.");
-```
-
-####Syntax 3
-
-    Object.prototype.createProxy(before, after, context)
-
-#####Arguments
-
-<dl>
-  <dt>before</dt>
-  <dd>A function that will execute before the target. Optional if after is specified.</dd>
-  <dt>after</dt>
-  <dd>A function that will execute after the target. Optional if before is specified.</dd>
-  <dt>context</dt>
-  <dd>An optional object to use for this when executing the proxy function. If not provided, this will revert to the default behavior.</dd>
+  <dt>options</dt>
+  <dd>Different options for creating the proxy. </dd>
   <dt>returns</dt>
   <dd>A new function that invokes the target function, before, and after with this pointed to the provided context.</dd>
 </dl>
@@ -176,7 +131,7 @@ A function proxy sandwiches a target function between two functions that provide
         after = function () { this.afterInvoked = true; },
         
         // createProxy is invoked as a method of the target function.
-        proxy = targetFunc.createProxy(before, after, context);
+        proxy = targetFunc.createProxy({ before: before, after: after, context: context });
         
     proxy();
     
@@ -192,17 +147,15 @@ An object proxy wraps a target object and replaces each method with a proxy meth
 
 ####Syntax 1
 
-    SProxy.createProxyObject(obj, before, after)
+    SProxy.createProxyObject(obj, options)
 
 #####Arguments
 
 <dl>
   <dt>obj</dt>
   <dd>A target object that will have each method replaced by a proxy method.</dd>
-  <dt>before</dt>
-  <dd>A function that will execute before the target. Optional if after is specified.</dd>
-  <dt>after</dt>
-  <dd>A function that will execute after the target. Optional if before is specified.</dd>
+  <dt>options</dt>
+  <dd>Different options for creating the proxy. </dd>
   <dt>returns</dt>
   <dd>A new object that has each method replaced by a proxy method.</dd>
 </dl>
@@ -223,9 +176,10 @@ An object proxy wraps a target object and replaces each method with a proxy meth
             method2: function () {
                 this.method2Called = true;
             }
-        };
+        },
+        options = { before: function () { beforeCount++; }, after: function () { afterCount++; } };
     
-    proxy = SProxy.createProxyObject(obj, function () { beforeCount++; }, function () { afterCount++; });
+    proxy = SProxy.createProxy(obj, options);
     
     proxy.method1();
     proxy.method2();
@@ -243,15 +197,13 @@ An object proxy wraps a target object and replaces each method with a proxy meth
 
 ####Syntax 2
 
-    Object.prototype.createProxy(before, after)
+    Object.prototype.createProxy(options)
 
 #####Arguments
 
 <dl>
-  <dt>before</dt>
-  <dd>A function that will execute before the target. Optional if after is specified.</dd>
-  <dt>after</dt>
-  <dd>A function that will execute after the target. Optional if before is specified.</dd>
+  <dt>options</dt>
+  <dd>Different options for creating the proxy. </dd>
   <dt>returns</dt>
   <dd>A new object that has each method replaced by a proxy method.</dd>
 </dl>
@@ -272,9 +224,10 @@ An object proxy wraps a target object and replaces each method with a proxy meth
             method2: function () {
                 this.method2Called = true;
             }
-        };
+        },
+        options = { before: function () { beforeCount++; }, after: function () { afterCount++; } };
     
-    proxy = obj.createProxy(function () { beforeCount++; }, function () { afterCount++; });
+    proxy = obj.createProxy(options);
     
     proxy.method1();
     proxy.method2();

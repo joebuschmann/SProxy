@@ -16,8 +16,10 @@ test("Verify before and after method execution.", function (assert) {
         afterInvokedCount++;
     };
     
+    var options = { before: before, after: after };
+    
     // Create and test a proxy by passing arguments individually.
-    var proxy = SProxy.createProxy(func, before, after);
+    var proxy = SProxy.createProxy(func, options);
     
     proxy();
     
@@ -25,25 +27,14 @@ test("Verify before and after method execution.", function (assert) {
     assert.strictEqual(functionInvokedCount, 1, "The proxied function should have been invoked one time.");
     assert.strictEqual(afterInvokedCount, 1, "The after function should have been invoked one time.");
     
-    // Create and test a proxy by passing arguments as a DTO.
-    proxy = SProxy.createProxy({ func: func,
-                                 before: before,
-                                 after: after });
+    // Create and test a proxy by invoking createProxy from Object.prototype.
+    proxy = func.createProxy(options);
     
     proxy();
     
     assert.strictEqual(beforeInvokedCount, 2, "The before function should have been invoked two times.");
     assert.strictEqual(functionInvokedCount, 2, "The proxied function should have been invoked two times.");
     assert.strictEqual(afterInvokedCount, 2, "The after function should have been invoked two times.");
-    
-    // Create and test a proxy by invoking createProxy from Object.prototype.
-    proxy = func.createProxy(before, after);
-    
-    proxy();
-    
-    assert.strictEqual(beforeInvokedCount, 3, "The before function should have been invoked three times.");
-    assert.strictEqual(functionInvokedCount, 3, "The proxied function should have been invoked three times.");
-    assert.strictEqual(afterInvokedCount, 3, "The after function should have been invoked three times.");
 });
 
 test("Verify correct arguments passed to before, after, and proxied function.", function (assert) {
@@ -63,7 +54,9 @@ test("Verify correct arguments passed to before, after, and proxied function.", 
         afterArguments = arguments;
     };
     
-    var proxy = SProxy.createProxy(func, before, after);
+    var options = { before: before, after: after };
+    
+    var proxy = SProxy.createProxy(func, options);
     
     proxy(4, 5, 6);
     
@@ -92,7 +85,7 @@ test("Verify \"this\" points to the correct object when creating a proxy for a m
     
     assert.strictEqual(anObject.WhatIsValue1(), 23, "The value for \"value1\" should come from the object and not global.");
 
-    anObject.WhatIsValue1 = SProxy.createProxy(anObject.WhatIsValue1, function () {});
+    anObject.WhatIsValue1 = SProxy.createProxy(anObject.WhatIsValue1, { before: function () {} });
     
     assert.strictEqual(anObject.WhatIsValue1(), 23, "The value for \"value1\" should come from the object and not global.");
 });
@@ -105,7 +98,9 @@ test("Verify \"this\" points to the correct context if a custom context is provi
         this.value2 = 45;
     };
 
-    var proxy = SProxy.createProxy(func, function () {}, function () {}, context);
+    var options = { before: function () {}, after: function () {}, context: context };
+    
+    var proxy = SProxy.createProxy(func, options);
     
     proxy();
     
@@ -129,7 +124,7 @@ test("Verify cancellation of executing the proxied function.", function(assert) 
         return 45;
     };
     
-    var proxy = SProxy.createProxy(func, before);
+    var proxy = SProxy.createProxy(func, { before: before });
     
     var retVal = proxy();
     
@@ -155,8 +150,10 @@ test("Verify creating a proxy for all methods in an object.", function(assert) {
                 this.method2Called = true;
             }
         };
+        
+    var options = { before: function () { beforeCount++; }, after: function () { afterCount++; } };
     
-    proxy = SProxy.createProxyObject(obj, function () { beforeCount++; }, function () { afterCount++; });
+    proxy = SProxy.createProxy(obj, options);
     
     proxy.method1();
     proxy.method2();
@@ -172,7 +169,7 @@ test("Verify creating a proxy for all methods in an object.", function(assert) {
     assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
     
     // Create the proxy using createProxy from Object.prototype.
-    proxy = obj.createProxy(function () { beforeCount++; }, function () { afterCount++; });
+    proxy = obj.createProxy(options);
     
     proxy.method1();
     proxy.method2();
@@ -199,7 +196,7 @@ test("Verify creating a proxy doesn't alter the original object.", function (ass
         return { cancel: true, returnValue: 45 };
     };
     
-    var proxy = SProxy.createProxyObject(original, before);
+    var proxy = SProxy.createProxy(original, { before: before });
     
     assert.strictEqual(original.method1(), 23, "The original object should not be altered when creating the proxy.");
     assert.strictEqual(proxy.method1(), 45, "The proxy object should return a different value.");
@@ -207,7 +204,7 @@ test("Verify creating a proxy doesn't alter the original object.", function (ass
 
 test("Verify the return value isn't passed to the after function when it is undefined.", function (assert) {
     var argCount = 0,
-        proxy = SProxy.createProxy({ func: function () {}, after: function () { argCount = arguments.length; }});
+        proxy = SProxy.createProxy(function () {}, { after: function () { argCount = arguments.length; } });
     
     proxy(1, 2, 3);
     
@@ -217,7 +214,8 @@ test("Verify the return value isn't passed to the after function when it is unde
 test("Verify the return value is passed to the after function when it is defined.", function (assert) {
     var argCount = 0,
         lastArg,
-        proxy = SProxy.createProxy({ func: function () { return 23; }, after: function () { argCount = arguments.length; lastArg = arguments[argCount - 1]; }});
+        func = function () { return 23; },
+        proxy = SProxy.createProxy(func, { after: function () { argCount = arguments.length; lastArg = arguments[argCount - 1]; } });
     
     proxy(1, 2, 3);
     
@@ -233,8 +231,8 @@ test("Verify nesting of before and after functions by creating a proxy of a prox
         after2 = function () { executionOrder.push("after2"); },
         func = function () {};
     
-    var proxy = SProxy.createProxy({ func: func, before: before1, after: after1 });
-    proxy = SProxy.createProxy({ func: proxy, before: before2, after: after2 });
+    var proxy = SProxy.createProxy(func, { before: before1, after: after1 });
+    proxy = SProxy.createProxy(proxy, { before: before2, after: after2 });
     
     proxy();
     
