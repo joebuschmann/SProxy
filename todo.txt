@@ -12,3 +12,5 @@ X 11. Test nesting of before and after functions and verify order of execution.
 12. Write tests to verify exception when bad arguments are passed.
 X 13. Add proxy creation functions to Object.Prototype().
 14. Research jasmine and grunt+karma.
+15. Add error handling option.
+16. Update API to have the ability to pass in multiple befores and afters.
