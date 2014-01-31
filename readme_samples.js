@@ -9,7 +9,7 @@ test("README.md installSProxy Sample 1", function (assert) {
     // Install into global.
     installSProxy(this);
     
-    assert.ok(customContext.createProxy, "The method createProxy() should be available from the global object.");
+    assert.ok(createProxy, "The method createProxy() should be available from the global object.");
 });
 
 test("README.md createProxy Sample 1", function (assert) {
