@@ -1,5 +1,5 @@
-SProxy - Simple Proxy Creation
-==============================
+SProxy - Simple Proxies
+=======================
 
 SProxy is a Javascript library for creating proxies for functions and objects. A proxy can intercept function calls to execute pre-precessing and/or post-processing logic, cancel a function call, and alter a function's return value.
 
@@ -21,7 +21,7 @@ The SProxy logic is contained in the file sproxy.js. The function `installSProxy
     // Install into global.
     installSProxy(this);
     
-    assert.ok(customContext.createProxy, "The method createProxy() should be available from the global object.");
+    assert.ok(createProxy, "The method createProxy() should be available from the global object.");
 ```
 
 Quick Start
@@ -86,9 +86,9 @@ A function proxy sandwiches a target function between two functions that provide
   <dt>func</dt>
   <dd>The target function whose behavior will be modified by the proxy function.</dd>
   <dt>options</dt>
-  <dd>Different options for creating the proxy. </dd>
+  <dd>Options for creating the proxy. Includes options.before, options.after, and options.context.</dd>
   <dt>returns</dt>
-  <dd>A new function that invokes func as specified by options.</dd>
+  <dd>A proxy function that invokes func according to the values specified by options.</dd>
 </dl>
 
 
@@ -116,9 +116,9 @@ A function proxy sandwiches a target function between two functions that provide
 
 <dl>
   <dt>options</dt>
-  <dd>Different options for creating the proxy. </dd>
+  <dd>Options for creating the proxy. Includes options.before, options.after, and options.context.</dd>
   <dt>returns</dt>
-  <dd>A new function that invokes the target function, before, and after with this pointed to the provided context.</dd>
+  <dd>A proxy function that invokes target function according to the values specified by options.</dd>
 </dl>
 
 
@@ -155,7 +155,7 @@ An object proxy wraps a target object and replaces each method with a proxy meth
   <dt>obj</dt>
   <dd>A target object that will have each method replaced by a proxy method.</dd>
   <dt>options</dt>
-  <dd>Different options for creating the proxy. </dd>
+  <dd>Options for creating the proxy. Includes options.before, options.after, and options.context.</dd>
   <dt>returns</dt>
   <dd>A new object that has each method replaced by a proxy method.</dd>
 </dl>
@@ -203,7 +203,7 @@ An object proxy wraps a target object and replaces each method with a proxy meth
 
 <dl>
   <dt>options</dt>
-  <dd>Different options for creating the proxy. </dd>
+  <dd>Options for creating the proxy. Includes options.before, options.after, and options.context.</dd>
   <dt>returns</dt>
   <dd>A new object that has each method replaced by a proxy method.</dd>
 </dl>
