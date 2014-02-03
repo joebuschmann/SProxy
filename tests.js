@@ -138,8 +138,8 @@ test("Verify cancellation of executing the proxied function.", function(assert) 
 
 test("Verify modification of the return value in the after function.", function (assert) {
     var arg = 23,
-    // Set up a trivial after function to modify the return value.
-    // The return value from the target function is passed in as an extra argument.
+        // Set up a trivial after function to modify the return value.
+        // The return value from the target function is passed in as an extra argument.
         after = function (x) {
             assert.strictEqual(arguments.length, 2, "There should be two arguments passed in. One is x and the other is the return value.");
             assert.strictEqual(arguments[0], arg, "The first argument should have a value of " + arg + ".");
