@@ -136,6 +136,24 @@ test("Verify cancellation of executing the proxied function.", function(assert) 
     assert.strictEqual(retVal, 23, "The \"before\" method should not cancel execution.");
 });
 
+test("Verify modification of the return value in the after function.", function (assert) {
+    var arg = 23,
+    // Set up a trivial after function to modify the return value.
+    // The return value from the target function is passed in as an extra argument.
+        after = function (x) {
+            assert.strictEqual(arguments.length, 2, "There should be two arguments passed in. One is x and the other is the return value.");
+            assert.strictEqual(arguments[0], arg, "The first argument should have a value of " + arg + ".");
+            assert.strictEqual(arguments[1], arg, "The second argument should have a value of " + arg + ".");
+            
+            var retValue = arguments[1];
+            return {cancel: true, returnValue: retValue + x};
+        },
+        proxy = (function (x) { return x; }).createProxy({after: after}),
+        actualValue = proxy(arg);
+    
+    assert.strictEqual(actualValue, arg + arg, "The return value should have been modified by the after function.");
+});
+
 test("Verify creating a proxy for all methods in an object.", function(assert) {
     var beforeCount = 0,
         afterCount = 0,
