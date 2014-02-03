@@ -66,8 +66,8 @@ You can also cancel the invocation of `func` and optionally return a different v
 Or modify the return value in the `after` function.
 
 ```Javascript
-    var after = function (x) {
-        var origRetVal = arguments[1];
+    var after = function () {
+        var origRetVal = arguments[0];
         
         if (origRetVal === undefined) {
             return { cancel: true, returnValue: { state: open } };
