@@ -30,25 +30,25 @@ Quick Start
 Say you want a function `before` to execute before another function `func`. You can create a proxy to do that:
 
 ```Javascript
-    var proxy = SProxy.createProxy(func, { before: before });
+    var proxy = SProxy.createProxy(func, { onEnter: before });
 ```
 
 What about after?
 
 ```Javascript
-    var proxy = SProxy.createProxy(func, { after: after });
+    var proxy = SProxy.createProxy(func, { onExit: after });
 ```
 
 What about both?
 
 ```Javascript
-    var proxy = SProxy.createProxy(func, { before: before, after: after });
+    var proxy = SProxy.createProxy(func, { onEnter: before, onExit: after });
 ```
 
 If you want to point `this` to a different context `newContext`, do this:
 
 ```Javascript
-    var proxy = SProxy.createProxy(func, { before: before, after: after, context: newContext });
+    var proxy = SProxy.createProxy(func, { onEnter: before, onExit: after, context: newContext });
 ```
 
 You can also cancel the invocation of `func` and optionally return a different value.
@@ -80,7 +80,7 @@ You can create a proxy for an entire object.
 ```Javascript
     // proxy is a new object with all the methods from anObject replaced by a proxy method.
     // anObject is the prototype for proxy and is unchanged.
-    var proxy = SProxy.createProxy(anObject, { before: before, after: after });
+    var proxy = SProxy.createProxy(anObject, { onEnter: before, onExit: after });
 ```
 
 Function Proxies
@@ -98,7 +98,7 @@ A function proxy sandwiches a target function between two functions that provide
   <dt>func</dt>
   <dd>The target function whose behavior will be modified by the proxy function.</dd>
   <dt>options</dt>
-  <dd>Options for creating the proxy. Includes options.before, options.after, and options.context.</dd>
+  <dd>Options for creating the proxy. Includes options.onEnter, options.onExit, and options.context.</dd>
   <dt>returns</dt>
   <dd>A proxy function that invokes func according to the values specified by options.</dd>
 </dl>
@@ -107,17 +107,17 @@ A function proxy sandwiches a target function between two functions that provide
 #####Example
 
 ```Javascript
-    var context = { targetInvoked: false, beforeInvoked: false, afterInvoked: false },
+    var context = { targetInvoked: false, onEnterInvoked: false, onExitInvoked: false },
         targetFunc = function () { this.targetInvoked = true; },
-        before = function () { this.beforeInvoked = true; },
-        after = function () { this.afterInvoked = true; },
-        proxy = SProxy.createProxy(targetFunc, { before: before, after: after, context: context });
+        onEnter = function () { this.onEnterInvoked = true; },
+        onExit = function () { this.onExitInvoked = true; },
+        proxy = SProxy.createProxy(targetFunc, { onEnter: onEnter, onExit: onExit, context: context });
         
     proxy();
     
     assert.ok(context.targetInvoked, "The proxy should execute the target function.");
-    assert.ok(context.beforeInvoked, "The proxy should execute the before function.");
-    assert.ok(context.afterInvoked, "The proxy should execute the after function.");
+    assert.ok(context.onEnterInvoked, "The proxy should execute the onEnter function.");
+    assert.ok(context.onExitInvoked, "The proxy should execute the onExit function.");
 ```
 
 ####Syntax 2
@@ -128,7 +128,7 @@ A function proxy sandwiches a target function between two functions that provide
 
 <dl>
   <dt>options</dt>
-  <dd>Options for creating the proxy. Includes options.before, options.after, and options.context.</dd>
+  <dd>Options for creating the proxy. Includes options.onEnter, options.onExit, and options.context.</dd>
   <dt>returns</dt>
   <dd>A proxy function that invokes target function according to the values specified by options.</dd>
 </dl>
@@ -137,19 +137,19 @@ A function proxy sandwiches a target function between two functions that provide
 #####Example
 
 ```Javascript
-    var context = { targetInvoked: false, beforeInvoked: false, afterInvoked: false },
+    var context = { targetInvoked: false, onEnterInvoked: false, onExitInvoked: false },
         targetFunc = function () { this.targetInvoked = true; },
-        before = function () { this.beforeInvoked = true; },
-        after = function () { this.afterInvoked = true; },
+        onEnter = function () { this.onEnterInvoked = true; },
+        onExit = function () { this.onExitInvoked = true; },
         
         // createProxy is invoked as a method of the target function.
-        proxy = targetFunc.createProxy({ before: before, after: after, context: context });
+        proxy = targetFunc.createProxy({ onEnter: onEnter, onExit: onExit, context: context });
         
     proxy();
     
     assert.ok(context.targetInvoked, "The proxy should execute the target function.");
-    assert.ok(context.beforeInvoked, "The proxy should execute the before function.");
-    assert.ok(context.afterInvoked, "The proxy should execute the after function.");
+    assert.ok(context.onEnterInvoked, "The proxy should execute the onEnter function.");
+    assert.ok(context.onExitInvoked, "The proxy should execute the onExit function.");
 ```
 
 Object Proxies
@@ -167,7 +167,7 @@ An object proxy wraps a target object and replaces each method with a proxy meth
   <dt>obj</dt>
   <dd>A target object that will have each method replaced by a proxy method.</dd>
   <dt>options</dt>
-  <dd>Options for creating the proxy. Includes options.before, options.after, and options.context.</dd>
+  <dd>Options for creating the proxy. Includes options.onEnter, options.onExit, and options.context.</dd>
   <dt>returns</dt>
   <dd>A new object that has each method replaced by a proxy method.</dd>
 </dl>
@@ -176,8 +176,8 @@ An object proxy wraps a target object and replaces each method with a proxy meth
 #####Example
 
 ```Javascript
-    var beforeCount = 0,
-        afterCount = 0,
+    var onEnterCount = 0,
+        onExitCount = 0,
         proxy,
         obj = {
             method1Called: false,
@@ -189,7 +189,7 @@ An object proxy wraps a target object and replaces each method with a proxy meth
                 this.method2Called = true;
             }
         },
-        options = { before: function () { beforeCount++; }, after: function () { afterCount++; } };
+        options = { onEnter: function () { onEnterCount++; }, onExit: function () { onExitCount++; } };
     
     proxy = SProxy.createProxy(obj, options);
     
@@ -201,8 +201,8 @@ An object proxy wraps a target object and replaces each method with a proxy meth
     assert.ok(proxy.method1Called, "Properties of the original object should be accessable through the proxy.");
     assert.ok(proxy.method2Called, "Properties of the original object should be accessable through the proxy.");
     
-    assert.strictEqual(beforeCount, 2, "The before function should have been invoked.");
-    assert.strictEqual(afterCount, 2, "The after function should have been invoked.");
+    assert.strictEqual(onEnterCount, 2, "The onEnter function should have been invoked.");
+    assert.strictEqual(onExitCount, 2, "The onExit function should have been invoked.");
     
     assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
 ```
@@ -215,7 +215,7 @@ An object proxy wraps a target object and replaces each method with a proxy meth
 
 <dl>
   <dt>options</dt>
-  <dd>Options for creating the proxy. Includes options.before, options.after, and options.context.</dd>
+  <dd>Options for creating the proxy. Includes options.onEnter, options.onExit, and options.context.</dd>
   <dt>returns</dt>
   <dd>A new object that has each method replaced by a proxy method.</dd>
 </dl>
@@ -224,8 +224,8 @@ An object proxy wraps a target object and replaces each method with a proxy meth
 #####Example
 
 ```Javascript
-    var beforeCount = 0,
-        afterCount = 0,
+    var onEnterCount = 0,
+        onExitCount = 0,
         proxy,
         obj = {
             method1Called: false,
@@ -237,7 +237,7 @@ An object proxy wraps a target object and replaces each method with a proxy meth
                 this.method2Called = true;
             }
         },
-        options = { before: function () { beforeCount++; }, after: function () { afterCount++; } };
+        options = { onEnter: function () { onEnterCount++; }, onExit: function () { onExitCount++; } };
     
     proxy = obj.createProxy(options);
     
@@ -249,8 +249,8 @@ An object proxy wraps a target object and replaces each method with a proxy meth
     assert.ok(proxy.method1Called, "Properties of the original object should be accessable through the proxy.");
     assert.ok(proxy.method2Called, "Properties of the original object should be accessable through the proxy.");
     
-    assert.strictEqual(beforeCount, 2, "The before function should have been invoked.");
-    assert.strictEqual(afterCount, 2, "The after function should have been invoked.");
+    assert.strictEqual(onEnterCount, 2, "The onEnter function should have been invoked.");
+    assert.strictEqual(onExitCount, 2, "The onExit function should have been invoked.");
     
     assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
 ```
@@ -258,9 +258,9 @@ An object proxy wraps a target object and replaces each method with a proxy meth
 Modifying the Return Value
 --------------------------
 
-The execution of a proxied function can be short-circuited by the `before` function. To do so, `before` should return an object with two properties `cancel` and `returnValue`. When `cancel` is true, the proxy immediately returns the value supplied by `returnValue`. Neither the original nor the `after` function will execute.
+The execution of a proxied function can be short-circuited by the `onEnter` function. To do so, `onEnter` should return an object with two properties `cancel` and `returnValue`. When `cancel` is true, the proxy immediately returns the value supplied by `returnValue`. Neither the original nor the `after` function will execute.
 
-If execution is not cancelled, then the original and `after` functions execute, and the return value is appended to the argument list supplied to `after`.
+If execution is not cancelled, then the original and `onExit` functions execute, and the return value is appended to the argument list supplied to `onExit`.
 
 **************
 

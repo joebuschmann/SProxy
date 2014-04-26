@@ -7,16 +7,16 @@ var installSProxy = function (ctx) {
     
     var validateOptions = function (options) {
         var validOptionsMsg = "The following options are available:\n\n"  +
-                              "1. before: a function that executes before the target function (required if no \"after\" function is provided)\n" +
-                              "2. after: a function that executes after the target function (required if no \"before\" function is provided)\n" +
+                              "1. onEnter: a function that executes before the target function (required if no \"onExit\" function is provided)\n" +
+                              "2. onExit: a function that executes after the target function (required if no \"onEnter\" function is provided)\n" +
                               "3. context: an object to use for \"this\" when executing the new proxy method (optional).\n";
         
         if (!options) {
             throw new Error("Invalid options.\n" + validOptionsMsg);
         }
         
-        if ((!options.before) && (!options.after)) {
-            throw new Error("Neither options.before nor options.after were provided. At least one must be supplied.\n" + validOptionsMsg);
+        if ((!options.onEnter) && (!options.onExit)) {
+            throw new Error("Neither options.onEnter nor options.onExit were provided. At least one must be supplied.\n" + validOptionsMsg);
         }
     };
     
@@ -41,18 +41,17 @@ var installSProxy = function (ctx) {
     var createProxyFunction = function (func, options) {
         validateOptions(options);
         
-        var before = options.before,
-            after = options.after,
+        var onEnter = options.onEnter,
+            onExit = options.onExit,
             context = options.context;
         
         return function () {
             var that = context || this,
                 retContext,
-                retVal,
-                afterArgs;
+                retVal;
             
-            if (before) {
-                retContext = before.apply(that, arguments);
+            if (onEnter) {
+                retContext = onEnter.apply(that, arguments);
                 
                 if (retContext && retContext.cancel) {
                     return retContext.returnValue;
@@ -61,10 +60,10 @@ var installSProxy = function (ctx) {
             
             retVal = func.apply(that, arguments);
             
-            if (after) {
+            if (onExit) {
                 var newArgs = addReturnValueToArgumentsArray(arguments, retVal);
                                 
-                retContext = after.apply(that, newArgs);
+                retContext = onExit.apply(that, newArgs);
                 
                 if (retContext && retContext.cancel) {
                     return retContext.returnValue;
@@ -82,7 +81,7 @@ var installSProxy = function (ctx) {
         
         // Make a copy of options and make sure the context is the object itself.
         // The this pointer in the proxy methods has to point to the original object.
-        options = { before: options.before, after: options.after, context: obj };
+        options = { onEnter: options.onEnter, onExit: options.onExit, context: obj };
         
         // Enumerate each method in the object and add a proxy method.
         // The original object is used as the context instead of the proxy
