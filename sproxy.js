@@ -3,7 +3,7 @@ var SProxy = {};
 var installSProxy = function (ctx) {
     "use strict";
     
-    var global = (function () { return this; })();
+//    var global = (function () { return this; })();
     
     var validateOptions = function (options) {
         var validOptionsMsg = "The following options are available:\n\n"  +
@@ -77,19 +77,24 @@ var installSProxy = function (ctx) {
     var createProxyObject = function (obj, options) {
         validateOptions(options);
         
-        var proxy = makeProxyObject(obj), item, func;
-        
-        // Make a copy of options and make sure the context is the object itself.
-        // The this pointer in the proxy methods has to point to the original object.
-        options = { onEnter: options.onEnter, onExit: options.onExit, context: obj };
+        var proxy = makeProxyObject(obj), item, func, chldObj;
+        options = { onEnter: options.onEnter, onExit: options.onExit };
         
         // Enumerate each method in the object and add a proxy method.
         // The original object is used as the context instead of the proxy
         // which keeps "this" pointing to the right place in the original methods.
         for (item in proxy) {
-            if (obj.hasOwnProperty(item) && typeof (proxy[item]) === "function") {
-                func = proxy[item];
-                proxy[item] = createProxyFunction(func, options);
+            if (obj.hasOwnProperty(item)) {
+                if (typeof (proxy[item]) === "function") {
+                    options.context = obj; // Use the original object here to make sure the "this" pointer is handled correctly in the original methods.
+                    func = proxy[item];
+                    proxy[item] = createProxyFunction(func, options);
+                }
+                else if (typeof (proxy[item] === "object")) {
+                    delete options.context;
+                    chldObj = proxy[item];
+                    proxy[item] = createProxyObject(chldObj, options);
+                }
             }
         }
         
@@ -97,10 +102,6 @@ var installSProxy = function (ctx) {
     };
     
     var createProxy = function (target, options) {
-        if (target === global) {
-            throw new Error("A proxy cannot be created for the global object.");
-        }
-        
         if (typeof target === "function") {
             return createProxyFunction(target, options);
         }

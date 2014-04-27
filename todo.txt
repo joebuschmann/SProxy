@@ -12,6 +12,7 @@ X 11. Test nesting of before and after functions and verify order of execution.
 12. Write tests to verify exception when bad arguments are passed.
 X 13. Add proxy creation functions to Object.Prototype().
 14. Research jasmine and grunt+karma.
-15. Add ability to filter which methods in an object get a proxy.
-16. Change before and after to onEnter and onExit.
+15. Add ability to filter which methods in an object get a proxy. Pass the property name and function to the filter.
+X 16. Change before and after to onEnter and onExit.
 17. Add onError and onFinish.
+X 18. Support recursively proxying object properties.

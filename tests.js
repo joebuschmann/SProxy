@@ -257,3 +257,32 @@ test("Verify nesting of onEnter and onExit functions by creating a proxy of a pr
     assert.deepEqual(executionOrder, ["onEnter2", "onEnter1", "onExit1", "onExit2"],
                      "The execution order of onEnter and onExit functions should be onEnter2(), onEnter1(), onExit1(), onExit2()."); 
 });
+
+test("Verify nested objects are proxied in addition to the parent.", function (assert) {
+    var parentObj = {},
+        childObj = {};
+    
+    parentObj.parentMethod = function() {
+        this.parentMethodCalled = true;
+    };
+    
+    parentObj.childObj = childObj;
+    
+    childObj.childMethod = function() {
+        this.childMethodCalled = true;
+    };
+    
+    var proxy = parentObj.createProxy({ onEnter: function() { this.onEnterCalled = true } });
+    
+    proxy.parentMethod();
+    
+    assert.strictEqual(true, parentObj.parentMethodCalled);
+    assert.strictEqual(true, parentObj.onEnterCalled);
+    assert.strictEqual(undefined, childObj.childMethodCalled);
+    assert.strictEqual(undefined, childObj.onEnterCalled);
+    
+    proxy.childObj.childMethod();
+    
+    assert.strictEqual(true, childObj.childMethodCalled);
+    assert.strictEqual(true, childObj.onEnterCalled);
+});
