@@ -2,9 +2,7 @@ var SProxy = {};
 
 var installSProxy = function (ctx) {
     "use strict";
-    
-//    var global = (function () { return this; })();
-    
+        
     var validateOptions = function (options) {
         var validOptionsMsg = "The following options are available:\n\n"  +
                               "1. onEnter: a function that executes before the target function (required if no \"onExit\" function is provided)\n" +
