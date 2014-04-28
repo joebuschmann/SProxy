@@ -75,23 +75,31 @@ var installSProxy = function (ctx) {
     var createProxyObject = function (obj, options) {
         validateOptions(options);
         
-        var proxy = makeProxyObject(obj), item, func, chldObj;
+        var proxy = makeProxyObject(obj),
+            propName,
+            propValue,
+            filter = options.filter && typeof (options.filter) == "function" ? options.filter : function () { return true };
+        
         options = { onEnter: options.onEnter, onExit: options.onExit };
         
-        // Enumerate each method in the object and add a proxy method.
-        // The original object is used as the context instead of the proxy
-        // which keeps "this" pointing to the right place in the original methods.
-        for (item in proxy) {
-            if (obj.hasOwnProperty(item)) {
-                if (typeof (proxy[item]) === "function") {
+        // Enumerate each property in the object and add a proxy for the objects and functions.
+        for (propName in proxy) {
+            if (obj.hasOwnProperty(propName)) {
+                if (typeof (proxy[propName]) === "function") {
                     options.context = obj; // Use the original object here to make sure the "this" pointer is handled correctly in the original methods.
-                    func = proxy[item];
-                    proxy[item] = createProxyFunction(func, options);
+                    propValue = proxy[propName];
+                    
+                    if (filter(propName, propValue)) {
+                        proxy[propName] = createProxyFunction(propValue, options);
+                    }
                 }
-                else if (typeof (proxy[item] === "object")) {
+                else if (typeof (proxy[propName] === "object")) {
                     delete options.context;
-                    chldObj = proxy[item];
-                    proxy[item] = createProxyObject(chldObj, options);
+                    propValue = proxy[propName];
+                    
+                    if (filter(propName, propValue)) {
+                        proxy[propName] = createProxyObject(propValue, options);
+                    }
                 }
             }
         }

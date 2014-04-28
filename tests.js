@@ -276,13 +276,47 @@ test("Verify nested objects are proxied in addition to the parent.", function (a
     
     proxy.parentMethod();
     
-    assert.strictEqual(true, parentObj.parentMethodCalled);
-    assert.strictEqual(true, parentObj.onEnterCalled);
-    assert.strictEqual(undefined, childObj.childMethodCalled);
-    assert.strictEqual(undefined, childObj.onEnterCalled);
+    assert.strictEqual(parentObj.parentMethodCalled, true);
+    assert.strictEqual(parentObj.onEnterCalled, true);
+    assert.strictEqual(childObj.childMethodCalled, undefined);
+    assert.strictEqual(childObj.onEnterCalled, undefined);
     
     proxy.childObj.childMethod();
     
-    assert.strictEqual(true, childObj.childMethodCalled);
-    assert.strictEqual(true, childObj.onEnterCalled);
+    assert.strictEqual(childObj.childMethodCalled, true);
+    assert.strictEqual(childObj.onEnterCalled, true);
+});
+
+test("Check for error message when bad args are passed.", function (assert) {
+    var someObj = {},
+        someFunc = function () {};
+    
+    assert.throws(function () { someObj.createProxy({}); });
+    assert.throws(function () { someFunc.createProxy({}); });
+});
+
+test("Conditionally create proxies for an object's methods.", function (assert) {
+    var someObj = {
+        method1 : function () {},
+        method2 : function () {}
+    };
+    
+    // Create a filter that only proxies method1.
+    var filterFunc = function (propName, propValue) {
+        if (propName === "method1") {
+            return true;
+        }
+        
+        return false;
+    };
+    
+    var callCount = 0;
+    
+    var proxy = someObj.createProxy({ onEnter: function () { callCount++; }, filter: filterFunc });
+    
+    proxy.method1();
+    assert.strictEqual(callCount, 1);
+    
+    proxy.method2();
+    assert.strictEqual(callCount, 1);
 });
