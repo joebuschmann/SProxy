@@ -287,6 +287,24 @@ test("Verify nested objects are proxied in addition to the parent.", function (a
     assert.strictEqual(childObj.onEnterCalled, true);
 });
 
+test("Verify the original object is still the context for a proxy of a proxy.", function (assert) {
+    var originalObj = {
+        method1Called : false,
+        method1: function () {
+            this.method1Called = true;
+            assert.strictEqual(this, originalObj, "The \"this\" pointer should point to the original object in the proxy regardless of the number of proxy layers.");
+        }
+    },
+        args = {onEnter: function () {}};
+    
+    // Create a proxy of a proxy.
+    var proxyOfAProxy = originalObj.createProxy(args).createProxy(args);
+    
+    proxyOfAProxy.method1();
+    
+    assert.strictEqual(originalObj.method1Called, true, "The original object should be the target of the \"this\" pointer regardless of how many layers of proxies are involved.");
+});
+
 test("Check for error message when bad args are passed.", function (assert) {
     var someObj = {},
         someFunc = function () {};
