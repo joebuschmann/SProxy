@@ -88,14 +88,26 @@ What if you only want to create a proxy for methods and properties that start wi
 
 ```Javascript
     var anObject = new AnObject();
-    var proxy = SProxy.createProxy(anObject, { onEnter: before, onExit: after, filter: function (propName, propValue) { return propName.indexOf("s") === 0; } });
+    var proxy = SProxy.createProxy(anObject, {
+        onEnter: before,
+        onExit: after,
+        filter: function (propName, propValue) {
+            return propName.indexOf("s") === 0;
+        }
+    });
 ```
 
 You can also filter using the property value.
 
 ```Javascript
     var anObject = new AnObject();
-    var proxy = SProxy.createProxy(anObject, { onEnter: before, onExit: after, filter: function (propName, propValue) { return propValue && propValue.createProxyForMe; } });
+    var proxy = SProxy.createProxy(anObject, {
+        onEnter: before,
+        onExit: after,
+        filter: function (propName, propValue) {
+            return propValue && propValue.createProxyForMe;
+        }
+    });
 ```
 
 Function Proxies
