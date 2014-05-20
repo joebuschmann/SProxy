@@ -71,7 +71,7 @@ test("README.md createProxy Sample 3", function (assert) {
     assert.strictEqual(onEnterCount, 2, "The onEnter function should have been invoked.");
     assert.strictEqual(onExitCount, 2, "The onExit function should have been invoked.");
     
-    assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+    assert.strictEqual(Object.getPrototypeOf(proxy), obj, "The original object should be the proxy's prototype.");
 });
 
 test("README.md Object.prototype.createProxy Sample 4", function (assert) {
@@ -103,6 +103,6 @@ test("README.md Object.prototype.createProxy Sample 4", function (assert) {
     assert.strictEqual(onEnterCount, 2, "The onEnter function should have been invoked.");
     assert.strictEqual(onExitCount, 2, "The onExit function should have been invoked.");
     
-    assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+    assert.strictEqual(Object.getPrototypeOf(proxy), obj, "The original object should be the proxy's prototype.");
 });
 

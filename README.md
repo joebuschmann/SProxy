@@ -75,12 +75,27 @@ Or modify the return value in the `after` function.
     };
 ```
 
-You can create a proxy for an entire object.
+You can create a proxy for an entire object. Each property that holds a function or an object will be proxied.
 
 ```Javascript
     // proxy is a new object with all the methods from anObject replaced by a proxy method.
     // anObject is the prototype for proxy and is unchanged.
+    var anObject = new AnObject();
     var proxy = SProxy.createProxy(anObject, { onEnter: before, onExit: after });
+```
+
+What if you only want to create a proxy for methods and properties that start with the letter "s"?
+
+```Javascript
+    var anObject = new AnObject();
+    var proxy = SProxy.createProxy(anObject, { onEnter: before, onExit: after, filter: function (propName, propValue) { return propName.indexOf("s") === 0; } });
+```
+
+You can also filter using the property value.
+
+```Javascript
+    var anObject = new AnObject();
+    var proxy = SProxy.createProxy(anObject, { onEnter: before, onExit: after, filter: function (propName, propValue) { return propValue && propValue.createProxyForMe; } });
 ```
 
 Function Proxies

@@ -184,7 +184,7 @@ test("Verify creating a proxy for all methods in an object.", function(assert) {
     assert.strictEqual(onEnterCount, 2, "The onEnter function should have been invoked.");
     assert.strictEqual(onExitCount, 2, "The onExit function should have been invoked.");
     
-    assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+    assert.strictEqual(Object.getPrototypeOf(proxy), obj, "The original object should be the proxy's prototype.");
     
     // Create the proxy using createProxy from Object.prototype.
     proxy = obj.createProxy(options);
@@ -200,7 +200,7 @@ test("Verify creating a proxy for all methods in an object.", function(assert) {
     assert.strictEqual(onEnterCount, 4, "The onEnter function should have been invoked.");
     assert.strictEqual(onExitCount, 4, "The onExit function should have been invoked.");
     
-    assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+    assert.strictEqual(Object.getPrototypeOf(proxy), obj, "The original object should be the proxy's prototype.");
 });
 
 test("Verify creating a proxy doesn't alter the original object.", function (assert) {
@@ -313,7 +313,7 @@ test("Check for error message when bad args are passed.", function (assert) {
     assert.throws(function () { someFunc.createProxy({}); });
 });
 
-test("Conditionally create proxies for an object's methods.", function (assert) {
+test("Conditionally create proxies based on method names.", function (assert) {
     var someObj = {
         method1 : function () {},
         method2 : function () {}
@@ -336,5 +336,31 @@ test("Conditionally create proxies for an object's methods.", function (assert) 
     assert.strictEqual(callCount, 1);
     
     proxy.method2();
+    assert.strictEqual(callCount, 1);
+});
+
+test("Conditionally create proxies based on object property values.", function (assert) {
+    var someObj = {
+        object1 : { proxyMe : true, aMethod : function () {} },
+        object2 : { proxyMe : false, aMethod : function () {} }
+    };
+    
+    // Create a filter that only proxies object1.
+    var filterFunc = function (propName, propValue) {
+        if (propValue && propValue.proxyMe) {
+            return true;
+        }
+        
+        return false;
+    };
+    
+    var callCount = 0;
+    
+    var proxy = someObj.createProxy({ onEnter: function () { callCount++; }, filter: filterFunc });
+    
+    proxy.object1.aMethod();
+    assert.strictEqual(callCount, 1);
+    
+    proxy.object2.aMethod();
     assert.strictEqual(callCount, 1);
 });
