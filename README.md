@@ -75,7 +75,7 @@ Or modify the return value in the `after` function.
     };
 ```
 
-You can create a proxy for an entire object. Each property that holds a function or an object will be proxied.
+You can create a proxy for an entire object. Each property that holds a method or an object will be proxied.
 
 ```Javascript
     // proxy is a new object with all the methods from anObject replaced by a proxy method.
@@ -84,7 +84,7 @@ You can create a proxy for an entire object. Each property that holds a function
     var proxy = SProxy.createProxy(anObject, { onEnter: before, onExit: after });
 ```
 
-What if you only want to create a proxy for methods and properties that start with the letter "s"?
+What if you only want to create a proxy for properties that start with the letter "s"?
 
 ```Javascript
     var anObject = new AnObject();
@@ -106,6 +106,32 @@ You can also filter using the property value.
         onExit: after,
         filter: function (propName, propValue) {
             return propValue && propValue.createProxyForMe;
+        }
+    });
+```
+
+What about error handling? You can provide a function to handle all exceptions.
+
+```Javascript
+    var anObject = new AnObject();
+    var proxy = SProxy.createProxy(anObject, {
+        onEnter: before,
+        onExit: after,
+        onError: function (e) {
+            console.debug(e);
+        }
+    });
+```
+
+`onExit` will not run if the original function throws an exception. If you always want `after` to execute, you should use `onFinal`.
+
+```Javascript
+    var anObject = new AnObject();
+    var proxy = SProxy.createProxy(anObject, {
+        onEnter: before,
+        onFinal: after,
+        onError: function (e) {
+            console.debug(e);
         }
     });
 ```
