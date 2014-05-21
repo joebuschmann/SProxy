@@ -18,13 +18,13 @@ var installSProxy = function (ctx) {
         }
     };
     
-    var addReturnValueToArgumentsArray = function (args, retVal) {
+    var addValueToArguments = function (args, newValue) {
         var newArgs = args;
         
-        if (retVal) {
+        if (newValue) {
             var slice = Array.prototype.slice;
             newArgs = slice.apply(args, [0]);
-            newArgs.push(retVal);
+            newArgs.push(newValue);
         }
         
         return newArgs;
@@ -41,6 +41,8 @@ var installSProxy = function (ctx) {
         
         var onEnter = options.onEnter,
             onExit = options.onExit,
+            onError = options.onError,
+            onFinal = options.onFinal,
             context = options.context;
         
         return function () {
@@ -48,23 +50,41 @@ var installSProxy = function (ctx) {
                 retContext,
                 retVal;
             
-            if (onEnter) {
-                retContext = onEnter.apply(that, arguments);
+            try {
+                if (onEnter) {
+                    retContext = onEnter.apply(that, arguments);
+
+                    if (retContext && retContext.cancel) {
+                        return retContext.returnValue;
+                    }
+                }
                 
-                if (retContext && retContext.cancel) {
-                    return retContext.returnValue;
+                retVal = func.apply(that, arguments);
+                
+                if (onExit) {
+                    var newArgs = addValueToArguments(arguments, retVal);
+
+                    retContext = onExit.apply(that, newArgs);
+
+                    if (retContext && retContext.cancel) {
+                        return retContext.returnValue;
+                    }
                 }
             }
-            
-            retVal = func.apply(that, arguments);
-            
-            if (onExit) {
-                var newArgs = addReturnValueToArgumentsArray(arguments, retVal);
-                                
-                retContext = onExit.apply(that, newArgs);
-                
-                if (retContext && retContext.cancel) {
-                    return retContext.returnValue;
+            catch (e) {
+                if (onError) {
+                    onError(e);
+                } else {
+                    throw e;
+                }
+            }
+            finally {
+                if (onFinal) {
+                    retContext = onFinal.apply(that, arguments);
+                    
+                    if (retContext && retContext.cancel) {
+                        return retContext.returnValue;
+                    }
                 }
             }
             

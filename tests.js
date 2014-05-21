@@ -364,3 +364,17 @@ test("Conditionally create proxies based on object property values.", function (
     proxy.object2.aMethod();
     assert.strictEqual(callCount, 1);
 });
+
+test("Verify onError and onFinal method execution", function (assert) {
+    var func = function () { throw new Error("This error was raised for testing purposes."); },
+        isErrorHandled = false,
+        isFinalHandled = false,
+        errorHandler = function () { isErrorHandled = true; },
+        finalHandler = function () { isFinalHandled = true; },
+        proxy = func.createProxy({ onEnter : function () {}, onError : errorHandler, onFinal : finalHandler });
+    
+    proxy();
+    
+    assert.strictEqual(isErrorHandled, true);
+    assert.strictEqual(isFinalHandled, true);
+});
