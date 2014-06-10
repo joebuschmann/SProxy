@@ -1,78 +1,99 @@
 
-test("Verify onEnter and onExit method execution.", function (assert) {
-    var onEnterInvokedCount = 0;
-    var functionInvokedCount = 0;
-    var onExitInvokedCount = 0;
+test("Verify simple use case scenario of before action, invocation of continue(), and after action.", function (assert) {
+    var beforeInvocationCount = 0;
+    var funcInvocationCount = 0;
+    var afterInvocationCount = 0;    
     
-    var onEnter = function() {
-        onEnterInvokedCount++;
+    var handler = function(executionContext) {
+        beforeInvocationCount++;
+        
+        executionContext.continue();
+        
+        afterInvocationCount++;
     };
     
     var func = function() {
-        functionInvokedCount++;
+        funcInvocationCount++;
     };
     
-    var onExit = function() {
-        onExitInvokedCount++;
-    };
-    
-    var options = { onEnter: onEnter, onExit: onExit };
-    
-    // Create and test a proxy by passing arguments individually.
-    var proxy = SProxy.createProxy(func, options);
+    // Create and test a proxy using the SProxy namespace.
+    var proxy = SProxy.createProxy(func, handler);
     
     proxy();
     
-    assert.strictEqual(onEnterInvokedCount, 1, "The onEnter function should have been invoked one time.");
-    assert.strictEqual(functionInvokedCount, 1, "The proxied function should have been invoked one time.");
-    assert.strictEqual(onExitInvokedCount, 1, "The onExit function should have been invoked one time.");
+    assert.strictEqual(beforeInvocationCount, 1, "The onEnter function should have been invoked one time.");
+    assert.strictEqual(funcInvocationCount, 1, "The proxied function should have been invoked one time.");
+    assert.strictEqual(afterInvocationCount, 1, "The onExit function should have been invoked one time.");
     
     // Create and test a proxy by invoking createProxy from Object.prototype.
-    proxy = func.createProxy(options);
+    proxy = func.createProxy(handler);
     
     proxy();
     
-    assert.strictEqual(onEnterInvokedCount, 2, "The onEnter function should have been invoked two times.");
-    assert.strictEqual(functionInvokedCount, 2, "The proxied function should have been invoked two times.");
-    assert.strictEqual(onExitInvokedCount, 2, "The onExit function should have been invoked two times.");
+    assert.strictEqual(beforeInvocationCount, 2, "The onEnter function should have been invoked two times.");
+    assert.strictEqual(funcInvocationCount, 2, "The proxied function should have been invoked two times.");
+    assert.strictEqual(afterInvocationCount, 2, "The onExit function should have been invoked two times.");
 });
 
-test("Verify correct arguments passed to onEnter, onExit, and proxied function.", function (assert) {
-    var onEnterArguments;
+test("Verify correct arguments passed to execution context and proxied function.", function (assert) {
+    var executionContextArgs;
     var funcArguments;
-    var onExitArguments;
     
-    var onEnter = function() {
-        onEnterArguments = arguments;
+    var handler = function(executionContext) {
+        executionContextArgs = executionContext.arguments;
+        executionContext.continue();
     };
     
     var func = function() {
         funcArguments = arguments;
     };
     
-    var onExit = function() {
-        onExitArguments = arguments;
-    };
-    
-    var options = { onEnter: onEnter, onExit: onExit };
-    
-    var proxy = SProxy.createProxy(func, options);
+    var proxy = SProxy.createProxy(func, handler);
     
     proxy(4, 5, 6);
     
     var slice = Array.prototype.slice;
     
-    assert.ok(onEnterArguments, "The onEnter arguments should have a value.");
-    assert.strictEqual(onEnterArguments.length, 3, "The number of arguments should be 3.");
-    assert.deepEqual(slice.apply(onEnterArguments), [4, 5, 6], "The arguments should be 4, 5, 6.");
+    assert.ok(executionContextArgs, "The execution context arguments should have a value.");
+    assert.strictEqual(executionContextArgs.length, 3, "The number of arguments should be 3.");
+    assert.deepEqual(slice.apply(executionContextArgs), [4, 5, 6], "The arguments should be 4, 5, 6.");
     
     assert.ok(funcArguments, "The proxied function arguments should have a value.");
     assert.strictEqual(funcArguments.length, 3, "The number of arguments should be 3.");
     assert.deepEqual(slice.apply(funcArguments), [4, 5, 6], "The arguments should be 4, 5, 6.");
+});
+
+test("Verify the return value from the target function is returned correctly.", function (assert) {
+    var handler = function(executionContext) {
+        executionContext.continue();
+    };
     
-    assert.ok(onExitArguments, "The onExit arguments should have a value.");
-    assert.strictEqual(onExitArguments.length, 3, "The number of arguments should be 3.");
-    assert.deepEqual(slice.apply(onExitArguments), [4, 5, 6], "The arguments should be 4, 5, 6.");
+    var func = function() {
+        return 22 + 1;
+    };
+    
+    var proxy = SProxy.createProxy(func, handler);
+    
+    var retValue = proxy();
+    
+    assert.strictEqual(retValue, 23, "The target function's return value should be returned by the proxy when it is not ooverridden.");
+});
+
+test("Verify an overridden return value is correct.", function (assert) {
+    var handler = function(executionContext) {
+        executionContext.continue();
+        executionContext.returnValue = 45;
+    };
+    
+    var func = function() {
+        return 22 + 1;
+    };
+    
+    var proxy = SProxy.createProxy(func, handler);
+    
+    var retValue = proxy();
+    
+    assert.strictEqual(retValue, 45, "The target function's return value should be returned by the proxy when it is not ooverridden.");
 });
 
 test("Verify \"this\" points to the correct object when creating a proxy for a method and no context is provided.", function (assert) {
@@ -80,78 +101,32 @@ test("Verify \"this\" points to the correct object when creating a proxy for a m
         value1: 23,
         WhatIsValue1: function() {
            return this.value1;
-        }
-    };
+        }},
+        proxyObject,
+        handler = function (ctx) { ctx.continue(); };
     
-    assert.strictEqual(anObject.WhatIsValue1(), 23, "The value for \"value1\" should come from the object and not global.");
+    assert.strictEqual(anObject.WhatIsValue1(), 23, "Initial sanity check failed.");
 
-    anObject.WhatIsValue1 = SProxy.createProxy(anObject.WhatIsValue1, { onEnter: function () {} });
+    // Create using method on SProxy.
+    proxyObject = SProxy.createProxy(anObject, handler);
+    assert.strictEqual(anObject.WhatIsValue1(), 23, "The value for \"value1\" is incorrect. Is \"this\" pointing to the right place?");
     
-    assert.strictEqual(anObject.WhatIsValue1(), 23, "The value for \"value1\" should come from the object and not global.");
-});
-
-test("Verify \"this\" points to the correct context if a custom context is provided.", function (assert) {
-    var context = {};
-    
-    var func = function () {
-        this.value1 = 23;
-        this.value2 = 45;
-    };
-
-    var options = { onEnter: function () {}, onExit: function () {}, context: context };
-    
-    var proxy = SProxy.createProxy(func, options);
-    
-    proxy();
-    
-    assert.strictEqual(context.value1, 23, "The custom context should be altered by the proxy.");
-    assert.strictEqual(context.value2, 45, "The custom context should be altered by the proxy.");
-    
-    var global = (function () { return this; })();
-    
-    assert.strictEqual(global.value1, undefined, "Value 1 should not exist in the global scope.");
-    assert.strictEqual(global.value2, undefined, "Value 2 should not exist in the global scope.");
+    // Create using method on object prototype.
+    proxyObject = anObject.createProxy(handler);
+    assert.strictEqual(anObject.WhatIsValue1(), 23, "The value for \"value1\" is incorrect. Is \"this\" pointing to the right place?");
 });
 
 test("Verify cancellation of executing the proxied function.", function(assert) {
-    var cancel = false;
+    var targetExecuted,
+        func = function () { targetExecuted = true; },
+        handler = function (ctx) { targetExecuted = false; };  // Handler does not call continue() which effectively cancels execution of the original function.
     
-    var onEnter = function() {
-        return { cancel: cancel, returnValue: 23 };
-    };
+    var proxy = SProxy.createProxy(func, handler);
     
-    var func = function() {
-        return 45;
-    };
+    proxy();
     
-    var proxy = SProxy.createProxy(func, { onEnter: onEnter });
-    
-    var retVal = proxy();
-    
-    assert.equal(retVal, 45, "The \"onEnter\" method should not cancel execution.");
-    
-    cancel = true;
-    retVal = proxy();
-    
-    assert.strictEqual(retVal, 23, "The \"onEnter\" method should not cancel execution.");
-});
-
-test("Verify modification of the return value in the onExit function.", function (assert) {
-    var arg = 23,
-        // Set up a trivial onExit function to modify the return value.
-        // The return value from the target function is passed in as an extra argument.
-        onExit = function (x) {
-            assert.strictEqual(arguments.length, 2, "There should be two arguments passed in. One is x and the other is the return value.");
-            assert.strictEqual(arguments[0], arg, "The first argument should have a value of " + arg + ".");
-            assert.strictEqual(arguments[1], arg, "The second argument should have a value of " + arg + ".");
-            
-            var retValue = arguments[1];
-            return {cancel: true, returnValue: retValue + x};
-        },
-        proxy = (function (x) { return x; }).createProxy({onExit: onExit}),
-        actualValue = proxy(arg);
-    
-    assert.strictEqual(actualValue, arg + arg, "The return value should have been modified by the onExit function.");
+    assert.notStrictEqual(targetExecuted, undefined, "targetExecuted should be a boolean value.");
+    assert.strictEqual(targetExecuted, false, "The original function should not have been executed because the handler did not call ctx.continue().");
 });
 
 test("Verify creating a proxy for all methods in an object.", function(assert) {
@@ -167,11 +142,15 @@ test("Verify creating a proxy for all methods in an object.", function(assert) {
             method2: function () {
                 this.method2Called = true;
             }
+        },
+        handler = function (ctx) { 
+            onEnterCount++;
+            ctx.continue();
+            onExitCount++;
         };
-        
-    var options = { onEnter: function () { onEnterCount++; }, onExit: function () { onExitCount++; } };
     
-    proxy = SProxy.createProxy(obj, options);
+    // Create the proxy using createProxy from SProxy namespace.
+    proxy = SProxy.createProxy(obj, handler);
     
     proxy.method1();
     proxy.method2();
@@ -187,7 +166,10 @@ test("Verify creating a proxy for all methods in an object.", function(assert) {
     assert.strictEqual(Object.getPrototypeOf(proxy), obj, "The original object should be the proxy's prototype.");
     
     // Create the proxy using createProxy from Object.prototype.
-    proxy = obj.createProxy(options);
+    proxy.method1Called = false;
+    proxy.method2Called = false;
+    
+    proxy = obj.createProxy(handler);
     
     proxy.method1();
     proxy.method2();
@@ -204,63 +186,72 @@ test("Verify creating a proxy for all methods in an object.", function(assert) {
 });
 
 test("Verify creating a proxy doesn't alter the original object.", function (assert) {
-    var original = {
+    var obj = {
         method1: function() {
            return 23;
         }
     };
     
-    var onEnter = function() {
-        return { cancel: true, returnValue: 45 };
+    var handler = function(ctx) {
+        ctx.continue();
+        ctx.returnValue = 45;
     };
     
-    var proxy = SProxy.createProxy(original, { onEnter: onEnter });
+    var proxy = SProxy.createProxy(obj, handler);
     
-    assert.strictEqual(original.method1(), 23, "The original object should not be altered when creating the proxy.");
+    assert.strictEqual(obj.method1(), 23, "The original object should not be altered when creating the proxy.");
     assert.strictEqual(proxy.method1(), 45, "The proxy object should return a different value.");
 });
 
-test("Verify the return value isn't passed to the onExit function when it is undefined.", function (assert) {
-    var argCount = 0,
-        proxy = SProxy.createProxy(function () {}, { onExit: function () { argCount = arguments.length; } });
+test("Verify the handler function can manipulate the object using \"this\".", function (assert) {
+    var obj = {
+            method1: function () { },
+            boolProperty: false,
+            numProperty: 23
+        },
+        handlerInvoked = false,
+        handler = function (ctx) {
+            handlerInvoked = true;
+            assert.strictEqual(this.boolProperty, false, "The handler method should be able to access the object via \"this\".");
+            assert.strictEqual(this.numProperty, 23, "The handler method should be able to access the object via \"this\".");
+        },
+        proxy = obj.createProxy(handler);
     
-    proxy(1, 2, 3);
+    proxy.method1();
     
-    assert.strictEqual(argCount, 3, "Because there is no return value from the proxied function, there should not be an extra argument passed to the \"onExit\" function.");
+    assert.strictEqual(handlerInvoked, true, "The handler was never invoked so the asserts in the handler were not verified.");
 });
 
-test("Verify the return value is passed to the onExit function when it is defined.", function (assert) {
-    var argCount = 0,
-        lastArg,
-        func = function () { return 23; },
-        proxy = SProxy.createProxy(func, { onExit: function () { argCount = arguments.length; lastArg = arguments[argCount - 1]; } });
-    
-    proxy(1, 2, 3);
-    
-    assert.strictEqual(argCount, 4, "The return value of the proxied function should be passed to the \"onExit\" function as the last argument.");
-    assert.strictEqual(lastArg, 23, "The return value should have a value of 23.");
-});
-
-test("Verify nesting of onEnter and onExit functions by creating a proxy of a proxy.", function (assert) {
+test("Verify execution order of nested proxies.", function (assert) {
     var executionOrder = [],
-        onEnter1 = function () { executionOrder.push("onEnter1"); },
-        onEnter2 = function () { executionOrder.push("onEnter2"); },
-        onExit1 = function () { executionOrder.push("onExit1"); },
-        onExit2 = function () { executionOrder.push("onExit2"); },
+        handler1 = function (ctx) {
+            executionOrder.push("onEnter1");
+            ctx.continue();
+            executionOrder.push("onExit1");
+        },
+        handler2 = function (ctx) {
+            executionOrder.push("onEnter2");
+            ctx.continue();
+            executionOrder.push("onExit2");
+        },
         func = function () {};
     
-    var proxy = SProxy.createProxy(func, { onEnter: onEnter1, onExit: onExit1 });
-    proxy = SProxy.createProxy(proxy, { onEnter: onEnter2, onExit: onExit2 });
+    var proxy = SProxy.createProxy(func, handler1);
+    proxy = SProxy.createProxy(proxy, handler2);
     
     proxy();
     
     assert.deepEqual(executionOrder, ["onEnter2", "onEnter1", "onExit1", "onExit2"],
-                     "The execution order of onEnter and onExit functions should be onEnter2(), onEnter1(), onExit1(), onExit2()."); 
+                     "The execution order for the handler functions should be onEnter2, onEnter1, onExit1, onExit2."); 
 });
 
 test("Verify nested objects are proxied in addition to the parent.", function (assert) {
     var parentObj = {},
-        childObj = {};
+        childObj = {},
+        handler = function (ctx) {
+            this.handlerCalled = true;
+            ctx.continue();
+        };
     
     parentObj.parentMethod = function() {
         this.parentMethodCalled = true;
@@ -272,52 +263,49 @@ test("Verify nested objects are proxied in addition to the parent.", function (a
         this.childMethodCalled = true;
     };
     
-    var proxy = parentObj.createProxy({ onEnter: function() { this.onEnterCalled = true } });
+    var proxy = parentObj.createProxy(handler);
     
     proxy.parentMethod();
     
     assert.strictEqual(parentObj.parentMethodCalled, true);
-    assert.strictEqual(parentObj.onEnterCalled, true);
+    assert.strictEqual(parentObj.handlerCalled, true);
     assert.strictEqual(childObj.childMethodCalled, undefined);
-    assert.strictEqual(childObj.onEnterCalled, undefined);
+    assert.strictEqual(childObj.handlerCalled, undefined);
     
     proxy.childObj.childMethod();
     
     assert.strictEqual(childObj.childMethodCalled, true);
-    assert.strictEqual(childObj.onEnterCalled, true);
+    assert.strictEqual(childObj.handlerCalled, true);
 });
 
 test("Verify the original object is still the context for a proxy of a proxy.", function (assert) {
     var originalObj = {
-        method1Called : false,
-        method1: function () {
-            this.method1Called = true;
-            assert.strictEqual(this, originalObj, "The \"this\" pointer should point to the original object in the proxy regardless of the number of proxy layers.");
-        }
-    },
-        args = {onEnter: function () {}};
+            method1Called : false,
+            method1: function () {
+                this.method1Called = true;
+                assert.strictEqual(this, originalObj, "The \"this\" pointer should point to the original object in the proxy regardless of the number of proxy layers.");
+            }
+        },
+        handler = function (ctx) { ctx.continue(); };
     
     // Create a proxy of a proxy.
-    var proxyOfAProxy = originalObj.createProxy(args).createProxy(args);
+    var proxyOfAProxy = originalObj.createProxy(handler).createProxy(handler);
     
     proxyOfAProxy.method1();
     
     assert.strictEqual(originalObj.method1Called, true, "The original object should be the target of the \"this\" pointer regardless of how many layers of proxies are involved.");
 });
 
-test("Check for error message when bad args are passed.", function (assert) {
-    var someObj = {},
-        someFunc = function () {};
-    
-    assert.throws(function () { someObj.createProxy({}); });
-    assert.throws(function () { someFunc.createProxy({}); });
-});
-
 test("Conditionally create proxies based on method names.", function (assert) {
     var someObj = {
-        method1 : function () {},
-        method2 : function () {}
-    };
+            method1 : function () {},
+            method2 : function () {}
+        },
+        callCount = 0,
+        handler = function (ctx) {
+            callCount++;
+            ctx.continue();
+        };
     
     // Create a filter that only proxies method1.
     var filterFunc = function (propName, propValue) {
@@ -328,53 +316,40 @@ test("Conditionally create proxies based on method names.", function (assert) {
         return false;
     };
     
-    var callCount = 0;
-    
-    var proxy = someObj.createProxy({ onEnter: function () { callCount++; }, filter: filterFunc });
+    var proxy = someObj.createProxy(handler, filterFunc);
     
     proxy.method1();
     assert.strictEqual(callCount, 1);
     
     proxy.method2();
-    assert.strictEqual(callCount, 1);
+    assert.strictEqual(callCount, 1, "A proxy should not have been created for method2 because of the filter.");
 });
 
 test("Conditionally create proxies based on object property values.", function (assert) {
     var someObj = {
-        object1 : { proxyMe : true, aMethod : function () {} },
-        object2 : { proxyMe : false, aMethod : function () {} }
-    };
+            object1 : { proxyMe : true, aMethod : function () {} },
+            object2 : { proxyMe : false, aMethod : function () {} }
+        },
+        callCount = 0,
+        handler = function (ctx) {
+            callCount++;
+            ctx.continue();
+        };
     
     // Create a filter that only proxies object1.
     var filterFunc = function (propName, propValue) {
-        if (propValue && propValue.proxyMe) {
+        if (propValue && ((typeof (propValue) === "function") || propValue.proxyMe)) {
             return true;
         }
         
         return false;
     };
     
-    var callCount = 0;
-    
-    var proxy = someObj.createProxy({ onEnter: function () { callCount++; }, filter: filterFunc });
+    var proxy = someObj.createProxy(handler, filterFunc);
     
     proxy.object1.aMethod();
     assert.strictEqual(callCount, 1);
     
     proxy.object2.aMethod();
-    assert.strictEqual(callCount, 1);
-});
-
-test("Verify onError and onFinal method execution", function (assert) {
-    var func = function () { throw new Error("This error was raised for testing purposes."); },
-        isErrorHandled = false,
-        isFinalHandled = false,
-        errorHandler = function () { isErrorHandled = true; },
-        finalHandler = function () { isFinalHandled = true; },
-        proxy = func.createProxy({ onEnter : function () {}, onError : errorHandler, onFinal : finalHandler });
-    
-    proxy();
-    
-    assert.strictEqual(isErrorHandled, true);
-    assert.strictEqual(isFinalHandled, true);
+    assert.strictEqual(callCount, 1, "A proxy should not have been created for object2 because of the filter.");
 });

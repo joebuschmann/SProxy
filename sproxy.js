@@ -2,33 +2,6 @@ var SProxy = {};
 
 var installSProxy = function (ctx) {
     "use strict";
-        
-    var validateOptions = function (options) {
-        var validOptionsMsg = "The following options are available:\n\n"  +
-                              "1. onEnter: a function that executes before the target function (required if no \"onExit\" function is provided)\n" +
-                              "2. onExit: a function that executes after the target function (required if no \"onEnter\" function is provided)\n" +
-                              "3. context: an object to use for \"this\" when executing the new proxy method (optional).\n";
-        
-        if (!options) {
-            throw new Error("Invalid options.\n" + validOptionsMsg);
-        }
-        
-        if ((!options.onEnter) && (!options.onExit)) {
-            throw new Error("Neither options.onEnter nor options.onExit were provided. At least one must be supplied.\n" + validOptionsMsg);
-        }
-    };
-    
-    var addValueToArguments = function (args, newValue) {
-        var newArgs = args;
-        
-        if (newValue) {
-            var slice = Array.prototype.slice;
-            newArgs = slice.apply(args, [0]);
-            newArgs.push(newValue);
-        }
-        
-        return newArgs;
-    };
     
     var makeProxyObject = function (obj) {
         var Proxy = function () {};
@@ -36,89 +9,50 @@ var installSProxy = function (ctx) {
         return new Proxy();
     };
     
-    var createProxyFunction = function (func, options) {
-        validateOptions(options);
-        
-        var onEnter = options.onEnter,
-            onExit = options.onExit,
-            onError = options.onError,
-            onFinal = options.onFinal,
-            context = options.context;
-        
-        return function () {
-            var that = context || this,
-                retContext,
-                retVal;
-            
-            try {
-                if (onEnter) {
-                    retContext = onEnter.apply(that, arguments);
-
-                    if (retContext && retContext.cancel) {
-                        return retContext.returnValue;
-                    }
-                }
-                
-                retVal = func.apply(that, arguments);
-                
-                if (onExit) {
-                    var newArgs = addValueToArguments(arguments, retVal);
-
-                    retContext = onExit.apply(that, newArgs);
-
-                    if (retContext && retContext.cancel) {
-                        return retContext.returnValue;
-                    }
-                }
+    var makeExecutionContext = function (target, args, that) {
+        return {
+            returnValue : undefined,
+            arguments : args,
+            continue : function () {
+                var retVal = target.apply(that, args);
+                this.returnValue = retVal;
             }
-            catch (e) {
-                if (onError) {
-                    onError(e);
-                } else {
-                    throw e;
-                }
-            }
-            finally {
-                if (onFinal) {
-                    retContext = onFinal.apply(that, arguments);
-                    
-                    if (retContext && retContext.cancel) {
-                        return retContext.returnValue;
-                    }
-                }
-            }
-            
-            return retVal;
         };
     };
     
-    var createProxyObject = function (obj, options) {
-        validateOptions(options);
-        
+    var createProxyFunction = function (target, handler, context) {        
+        return function () {
+            var that = context || this,
+                executionContext = makeExecutionContext(target, arguments, that);
+            
+            handler.call(that, executionContext);
+            
+            return executionContext.returnValue;
+        };
+    };
+    
+    var createProxyObject = function (obj, handler, filter) {        
         var proxy = makeProxyObject(obj),
             propName,
-            propValue,
-            filter = options.filter && typeof (options.filter) == "function" ? options.filter : function () { return true };
-        
-        options = { onEnter: options.onEnter, onExit: options.onExit };
+            propValue;
+            
+        filter = (filter && typeof (filter) == "function") ? filter : function () { return true };
         
         // Enumerate each property in the object and add a proxy for the objects and functions.
         for (propName in proxy) {
             if (obj.hasOwnProperty(propName)) {
-                if (typeof (proxy[propName]) === "function") {
-                    options.context = obj; // Use the original object here to make sure the "this" pointer is handled correctly in the original methods.
-                    propValue = proxy[propName];
-                    
+                propValue = proxy[propName];
+                
+                if (typeof (propValue) === "function") {
                     if (filter(propName, propValue)) {
-                        proxy[propName] = createProxyFunction(propValue, options);
+                        proxy[propName] = createProxyFunction(propValue, handler, obj);
                     }
                 }
-                else if (typeof (proxy[propName] === "object")) {
-                    delete options.context;
-                    propValue = proxy[propName];
+                else if (typeof (propValue) === "object") {
+                    
                     
                     if (filter(propName, propValue)) {
-                        proxy[propName] = createProxyObject(propValue, options);
+                        proxy[propName] = createProxyObject(propValue, handler, filter);
                     }
                 }
             }
@@ -127,12 +61,12 @@ var installSProxy = function (ctx) {
         return proxy;
     };
     
-    var createProxy = function (target, options) {
+    var createProxy = function (target, handler, filter) {
         if (typeof target === "function") {
-            return createProxyFunction(target, options);
+            return createProxyFunction(target, handler);
         }
         else if (typeof target === "object") {
-            return createProxyObject(target, options);
+            return createProxyObject(target, handler, filter);
         }
         
         throw new Error("A proxy can only be created for functions and objects.");
@@ -141,8 +75,8 @@ var installSProxy = function (ctx) {
     ctx.createProxy = createProxy;
     
     if (!Object.prototype.createProxy) {
-        Object.prototype.createProxy = function (options) {
-            return createProxy(this, options);
+        Object.prototype.createProxy = function (handler, filter) {
+            return createProxy(this, handler, filter);
         };
     }
 };
