@@ -1,4 +1,4 @@
-test("README.md installSProxy Sample 1", function (assert) {
+test("README Sample 1: Install SProxy to a custom context", function (assert) {
     // Install into a custom object.
     var customContext = {};
     
@@ -12,97 +12,106 @@ test("README.md installSProxy Sample 1", function (assert) {
     assert.ok(createProxy, "The method createProxy() should be available from the global object.");
 });
 
-test("README.md createProxy Sample 1", function (assert) {
-    var context = { targetInvoked: false, onEnterInvoked: false, onExitInvoked: false },
-        targetFunc = function () { this.targetInvoked = true; },
-        onEnter = function () { this.onEnterInvoked = true; },
-        onExit = function () { this.onExitInvoked = true; },
-        proxy = SProxy.createProxy(targetFunc, { onEnter: onEnter, onExit: onExit, context: context });
+test("README Sample 2: Create a simple proxy", function (assert) {
+    var func = function () {};
+    
+    var proxy = SProxy.createProxy(func, function (ctx) {
+        console.log("Before func executes...");
         
+        // The next line will execute func.
+        ctx.continue();
+        
+        console.log("After func executes...");
+    });
+    
     proxy();
     
-    assert.ok(context.targetInvoked, "The proxy should execute the target function.");
-    assert.ok(context.onEnterInvoked, "The proxy should execute the onEnter function.");
-    assert.ok(context.onExitInvoked, "The proxy should execute the onExit function.");
-});
-
-test("README.md Object.prototype.createProxy Sample 2", function (assert) {
-    var context = { targetInvoked: false, onEnterInvoked: false, onExitInvoked: false },
-        targetFunc = function () { this.targetInvoked = true; },
-        onEnter = function () { this.onEnterInvoked = true; },
-        onExit = function () { this.onExitInvoked = true; },
+    proxy = func.createProxy(function (ctx) {
+        console.log("Before func executes...");
         
-        // createProxy is invoked as a method of the target function.
-        proxy = targetFunc.createProxy({ onEnter: onEnter, onExit: onExit, context: context });
+        // The next line will execute func.
+        ctx.continue();
         
+        console.log("After func executes...");
+    });
+    
     proxy();
     
-    assert.ok(context.targetInvoked, "The proxy should execute the target function.");
-    assert.ok(context.onEnterInvoked, "The proxy should execute the onEnter function.");
-    assert.ok(context.onExitInvoked, "The proxy should execute the onExit function.");
+    expect(0);
 });
 
-test("README.md createProxy Sample 3", function (assert) {
-    var onEnterCount = 0,
-        onExitCount = 0,
-        proxy,
-        obj = {
-            method1Called: false,
-            method2Called: false,
-            method1: function () {
-                this.method1Called = true;
-            },
-            method2: function () {
-                this.method2Called = true;
-            }
-        },
-        options = { onEnter: function () { onEnterCount++; }, onExit: function () { onExitCount++; } };
+test("README Sample 3: Modify the return value", function (assert) {
+    var func = function () { return -1; };
     
-    proxy = SProxy.createProxy(obj, options);
+    var proxy = SProxy.createProxy(func, function (ctx) {
+        ctx.continue();
+        
+        if (ctx.returnValue < 0) {
+            ctx.returnValue = 0;
+        }
+    });
+    
+    var retValue = proxy();
+    
+    assert.strictEqual(retValue, 0);
+});
+
+test("README Sample 4: Proxy an object", function (assert) {
+    var obj = { method1: function () {},
+                childObject: { method1: function () {} }},
+        callCount = 0;
+    
+    var proxy = obj.createProxy(function (ctx) {
+        callCount++;
+        ctx.continue();
+    });
     
     proxy.method1();
-    proxy.method2();
+    proxy.childObject.method1();
     
-    assert.ok(obj.method1Called, "The original object should be the context for the proxy object.");
-    assert.ok(obj.method2Called, "The original object should be the context for the proxy object.");
-    assert.ok(proxy.method1Called, "Properties of the original object should be accessable through the proxy.");
-    assert.ok(proxy.method2Called, "Properties of the original object should be accessable through the proxy.");
-    
-    assert.strictEqual(onEnterCount, 2, "The onEnter function should have been invoked.");
-    assert.strictEqual(onExitCount, 2, "The onExit function should have been invoked.");
-    
-    assert.strictEqual(Object.getPrototypeOf(proxy), obj, "The original object should be the proxy's prototype.");
+    assert.strictEqual(callCount, 2);
 });
 
-test("README.md Object.prototype.createProxy Sample 4", function (assert) {
-    var onEnterCount = 0,
-        onExitCount = 0,
-        proxy,
-        obj = {
-            method1Called: false,
-            method2Called: false,
-            method1: function () {
-                this.method1Called = true;
-            },
-            method2: function () {
-                this.method2Called = true;
-            }
+test("README Sample 5: Apply a filter", function (assert) {
+    var obj = { method1: function () {},
+                childObject: { method1: function () {} }},
+        callCount = 0,
+        handler = function (ctx) {
+            callCount++;
+            ctx.continue();
         },
-        options = { onEnter: function () { onEnterCount++; }, onExit: function () { onExitCount++; } };
+        filter = function (propName, propValue) {
+            return (typeof (propValue) === "function");
+        };
     
-    proxy = obj.createProxy(options);
+    var proxy = obj.createProxy(handler, filter);
     
     proxy.method1();
-    proxy.method2();
+    proxy.childObject.method1();
     
-    assert.ok(obj.method1Called, "The original object should be the context for the proxy object.");
-    assert.ok(obj.method2Called, "The original object should be the context for the proxy object.");
-    assert.ok(proxy.method1Called, "Properties of the original object should be accessable through the proxy.");
-    assert.ok(proxy.method2Called, "Properties of the original object should be accessable through the proxy.");
-    
-    assert.strictEqual(onEnterCount, 2, "The onEnter function should have been invoked.");
-    assert.strictEqual(onExitCount, 2, "The onExit function should have been invoked.");
-    
-    assert.strictEqual(Object.getPrototypeOf(proxy), obj, "The original object should be the proxy's prototype.");
+    assert.strictEqual(callCount, 1);
 });
 
+test("README Sample 6: \"this\" points to the object and not global", function (assert) {
+    var obj = { 
+            method1: function () { this.originalMethodInvoked = true; },
+            childObject: {
+                method1: function () { this.originalMethodInvoked = true; }
+            }
+        };
+        
+    var handler = function (ctx) {
+            this.handlerInvoked = true;
+            ctx.continue();
+        };
+    
+    var proxy = obj.createProxy(handler);
+    
+    proxy.method1();
+    proxy.childObject.method1();
+    
+    assert.strictEqual(proxy.originalMethodInvoked, true);
+    assert.strictEqual(proxy.childObject.originalMethodInvoked, true);
+    assert.strictEqual(proxy.handlerInvoked, true);
+    assert.strictEqual(proxy.childObject.handlerInvoked, true);
+});

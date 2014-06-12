@@ -24,296 +24,138 @@ The SProxy logic is contained in the file sproxy.js. The function `installSProxy
     assert.ok(createProxy, "The method createProxy() should be available from the global object.");
 ```
 
+How SProxy.js Works
+-------------------
+
+SProxy.js works by creating a proxy function that combines the original or target function and a handler function. The handler function can add new behavior and/or control access to the target. The handler takes a single argument, an execution context, that provides metadata about the target function and how it is being executed. Most importantly, the execution context exposes a method `continue()` that invokes the target method, and the handler controls access to the target by choosing whether or not to call `continue()`.
+
+Below are all the properties exposed by the execution context.
+
+            returnValue : undefined,
+            arguments : args,
+            continue : function () {
+                var retVal = target.apply(that, args);
+                this.returnValue = retVal;
+            }
+
+| Property    | Description |
+| --------    | ----------- |
+| continue()  | Calls the target function. |
+| returnValue | Initially undefined, it holds the return value of the target after `continue()` is called and can be modified by the handler. |
+| arguments   | The arguments passed to the proxy method.|
+
 Quick Start
 -----------
 
-Say you want a function `before` to execute before another function `func`. You can create a proxy to do that:
+If you want to write some messages to the console before and after the execution of an existing function `func`. You can create a proxy to do that.
 
 ```Javascript
-    var proxy = SProxy.createProxy(func, { onEnter: before });
-```
-
-What about after?
-
-```Javascript
-    var proxy = SProxy.createProxy(func, { onExit: after });
-```
-
-What about both?
-
-```Javascript
-    var proxy = SProxy.createProxy(func, { onEnter: before, onExit: after });
-```
-
-If you want to point `this` to a different context `newContext`, do this:
-
-```Javascript
-    var proxy = SProxy.createProxy(func, { onEnter: before, onExit: after, context: newContext });
-```
-
-You can also cancel the invocation of `func` and optionally return a different value.
-
-```Javascript
-    var before = function () {
-        if (this.state === undefined) {
-            // Whoops, state is not defined!
-            // Don't bother to continue and return a valid state.
-            return { cancel: true, returnValue: { state: open } };
-        }
-    };
-```
-
-Or modify the return value in the `after` function.
-
-```Javascript
-    var after = function () {
-        var origRetVal = arguments[0];
+    var proxy = SProxy.createProxy(func, function (ctx) {
+        console.log("Before func executes...");
         
-        if (origRetVal === undefined) {
-            return { cancel: true, returnValue: { state: open } };
-        }
-    };
-```
-
-You can create a proxy for an entire object. Each property that holds a method or an object will be proxied.
-
-```Javascript
-    // proxy is a new object with all the methods from anObject replaced by a proxy method.
-    // anObject is the prototype for proxy and is unchanged.
-    var anObject = new AnObject();
-    var proxy = SProxy.createProxy(anObject, { onEnter: before, onExit: after });
-```
-
-What if you only want to create a proxy for properties that start with the letter "s"?
-
-```Javascript
-    var anObject = new AnObject();
-    var proxy = SProxy.createProxy(anObject, {
-        onEnter: before,
-        onExit: after,
-        filter: function (propName, propValue) {
-            return propName.indexOf("s") === 0;
-        }
-    });
-```
-
-You can also filter using the property value.
-
-```Javascript
-    var anObject = new AnObject();
-    var proxy = SProxy.createProxy(anObject, {
-        onEnter: before,
-        onExit: after,
-        filter: function (propName, propValue) {
-            return propValue && propValue.createProxyForMe;
-        }
-    });
-```
-
-What about error handling? You can provide a function to handle all exceptions.
-
-```Javascript
-    var anObject = new AnObject();
-    var proxy = SProxy.createProxy(anObject, {
-        onEnter: before,
-        onExit: after,
-        onError: function (e) {
-            console.debug(e);
-        }
-    });
-```
-
-`onExit` will not run if the original function throws an exception. If you always want `after` to execute, you should use `onFinal`.
-
-```Javascript
-    var anObject = new AnObject();
-    var proxy = SProxy.createProxy(anObject, {
-        onEnter: before,
-        onFinal: after,
-        onError: function (e) {
-            console.debug(e);
-        }
-    });
-```
-
-Function Proxies
-----------------
-
-A function proxy sandwiches a target function between two functions that provide pre-processing and/or post-processing behavior. At least one is required. In addition, the value of `this` can be changed to point the target function to a different context.
-
-####Syntax 1
-
-    SProxy.createProxy(func, options)
-
-#####Arguments
-
-<dl>
-  <dt>func</dt>
-  <dd>The target function whose behavior will be modified by the proxy function.</dd>
-  <dt>options</dt>
-  <dd>Options for creating the proxy. Includes options.onEnter, options.onExit, and options.context.</dd>
-  <dt>returns</dt>
-  <dd>A proxy function that invokes func according to the values specified by options.</dd>
-</dl>
-
-
-#####Example
-
-```Javascript
-    var context = { targetInvoked: false, onEnterInvoked: false, onExitInvoked: false },
-        targetFunc = function () { this.targetInvoked = true; },
-        onEnter = function () { this.onEnterInvoked = true; },
-        onExit = function () { this.onExitInvoked = true; },
-        proxy = SProxy.createProxy(targetFunc, { onEnter: onEnter, onExit: onExit, context: context });
+        // The next line will execute func.
+        ctx.continue();
         
-    proxy();
+        console.log("After func executes...");
+    });
+```
+
+You can also call `createProxy()` as a method of `func`.
+
+```Javascript
+    var proxy = func.createProxy(function (ctx) {
+        console.log("Before func executes...");
+        
+        // The next line will execute func.
+        ctx.continue();
+        
+        console.log("After func executes...");
+    });
+```
+
+To modify the return value, update the value of ctx.returnValue.
+
+```Javascript
+    var func = function () { return -1; };
     
-    assert.ok(context.targetInvoked, "The proxy should execute the target function.");
-    assert.ok(context.onEnterInvoked, "The proxy should execute the onEnter function.");
-    assert.ok(context.onExitInvoked, "The proxy should execute the onExit function.");
+    var proxy = SProxy.createProxy(func, function (ctx) {
+        ctx.continue();
+        
+        if (ctx.returnValue < 0) {
+            ctx.returnValue = 0;
+        }
+    });
+    
+    var retValue = proxy();
+    
+    assert.strictEqual(retValue, 0);
 ```
 
-####Syntax 2
-
-    Object.prototype.createProxy(options)
-
-#####Arguments
-
-<dl>
-  <dt>options</dt>
-  <dd>Options for creating the proxy. Includes options.onEnter, options.onExit, and options.context.</dd>
-  <dt>returns</dt>
-  <dd>A proxy function that invokes target function according to the values specified by options.</dd>
-</dl>
-
-
-#####Example
+You can create a proxy for an entire object.
 
 ```Javascript
-    var context = { targetInvoked: false, onEnterInvoked: false, onExitInvoked: false },
-        targetFunc = function () { this.targetInvoked = true; },
-        onEnter = function () { this.onEnterInvoked = true; },
-        onExit = function () { this.onExitInvoked = true; },
-        
-        // createProxy is invoked as a method of the target function.
-        proxy = targetFunc.createProxy({ onEnter: onEnter, onExit: onExit, context: context });
-        
-    proxy();
+    var obj = { method1: function () {},
+                childObject: { method1: function () {} }},
+        callCount = 0;
     
-    assert.ok(context.targetInvoked, "The proxy should execute the target function.");
-    assert.ok(context.onEnterInvoked, "The proxy should execute the onEnter function.");
-    assert.ok(context.onExitInvoked, "The proxy should execute the onExit function.");
-```
-
-Object Proxies
---------------
-
-An object proxy wraps a target object and replaces each method with a proxy method. The target object is not altered. Instead a new object is created with the original as its prototype. Each proxy method will retain the `this` reference to the target object.
-
-####Syntax 1
-
-    SProxy.createProxyObject(obj, options)
-
-#####Arguments
-
-<dl>
-  <dt>obj</dt>
-  <dd>A target object that will have each method replaced by a proxy method.</dd>
-  <dt>options</dt>
-  <dd>Options for creating the proxy. Includes options.onEnter, options.onExit, and options.context.</dd>
-  <dt>returns</dt>
-  <dd>A new object that has each method replaced by a proxy method.</dd>
-</dl>
-
-
-#####Example
-
-```Javascript
-    var onEnterCount = 0,
-        onExitCount = 0,
-        proxy,
-        obj = {
-            method1Called: false,
-            method2Called: false,
-            method1: function () {
-                this.method1Called = true;
-            },
-            method2: function () {
-                this.method2Called = true;
-            }
-        },
-        options = { onEnter: function () { onEnterCount++; }, onExit: function () { onExitCount++; } };
-    
-    proxy = SProxy.createProxy(obj, options);
+    var proxy = obj.createProxy(function (ctx) {
+        callCount++;
+        ctx.continue();
+    });
     
     proxy.method1();
-    proxy.method2();
+    proxy.childObject.method1();
     
-    assert.ok(obj.method1Called, "The original object should be the context for the proxy object.");
-    assert.ok(obj.method2Called, "The original object should be the context for the proxy object.");
-    assert.ok(proxy.method1Called, "Properties of the original object should be accessable through the proxy.");
-    assert.ok(proxy.method2Called, "Properties of the original object should be accessable through the proxy.");
-    
-    assert.strictEqual(onEnterCount, 2, "The onEnter function should have been invoked.");
-    assert.strictEqual(onExitCount, 2, "The onExit function should have been invoked.");
-    
-    assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+    assert.strictEqual(callCount, 2);
 ```
 
-####Syntax 2
-
-    Object.prototype.createProxy(options)
-
-#####Arguments
-
-<dl>
-  <dt>options</dt>
-  <dd>Options for creating the proxy. Includes options.onEnter, options.onExit, and options.context.</dd>
-  <dt>returns</dt>
-  <dd>A new object that has each method replaced by a proxy method.</dd>
-</dl>
-
-
-#####Example
+And conditionally create proxies based on a filter. What if you only want to proxy an object's methods and not its contained objects?
 
 ```Javascript
-    var onEnterCount = 0,
-        onExitCount = 0,
-        proxy,
-        obj = {
-            method1Called: false,
-            method2Called: false,
-            method1: function () {
-                this.method1Called = true;
-            },
-            method2: function () {
-                this.method2Called = true;
-            }
+    var obj = { method1: function () {},
+                childObject: { method1: function () {} }},
+        callCount = 0,
+        handler = function (ctx) {
+            callCount++;
+            ctx.continue();
         },
-        options = { onEnter: function () { onEnterCount++; }, onExit: function () { onExitCount++; } };
+        filter = function (propName, propValue) {
+            return (typeof (propValue) === "function");
+        };
     
-    proxy = obj.createProxy(options);
+    var proxy = obj.createProxy(handler, filter);
     
     proxy.method1();
-    proxy.method2();
+    proxy.childObject.method1();
     
-    assert.ok(obj.method1Called, "The original object should be the context for the proxy object.");
-    assert.ok(obj.method2Called, "The original object should be the context for the proxy object.");
-    assert.ok(proxy.method1Called, "Properties of the original object should be accessable through the proxy.");
-    assert.ok(proxy.method2Called, "Properties of the original object should be accessable through the proxy.");
-    
-    assert.strictEqual(onEnterCount, 2, "The onEnter function should have been invoked.");
-    assert.strictEqual(onExitCount, 2, "The onExit function should have been invoked.");
-    
-    assert.strictEqual(proxy.__proto__, obj, "The original object should be the proxy's prototype.");
+    assert.strictEqual(callCount, 1);
 ```
 
-Modifying the Return Value
---------------------------
+`this` will always point to the target object when creating a proxy for an object.
 
-The execution of a proxied function can be short-circuited by the `onEnter` function. To do so, `onEnter` should return an object with two properties `cancel` and `returnValue`. When `cancel` is true, the proxy immediately returns the value supplied by `returnValue`. Neither the original nor the `after` function will execute.
-
-If execution is not cancelled, then the original and `onExit` functions execute, and the return value is appended to the argument list supplied to `onExit`.
+```Javascript
+    var obj = { 
+            method1: function () { this.originalMethodInvoked = true; },
+            childObject: {
+                method1: function () { this.originalMethodInvoked = true; }
+            }
+        };
+        
+    var handler = function (ctx) {
+            this.handlerInvoked = true;
+            ctx.continue();
+        };
+    
+    var proxy = obj.createProxy(handler);
+    
+    proxy.method1();
+    proxy.childObject.method1();
+    
+    assert.strictEqual(proxy.originalMethodInvoked, true);
+    assert.strictEqual(proxy.childObject.originalMethodInvoked, true);
+    assert.strictEqual(proxy.handlerInvoked, true);
+    assert.strictEqual(proxy.childObject.handlerInvoked, true);
+```
 
 **************
 

@@ -96,11 +96,17 @@ test("Verify an overridden return value is correct.", function (assert) {
     assert.strictEqual(retValue, 45, "The target function's return value should be returned by the proxy when it is not ooverridden.");
 });
 
-test("Verify \"this\" points to the correct object when creating a proxy for a method and no context is provided.", function (assert) {
+test("Verify the original method still points to \"this\" when it is proxied.", function (assert) {
     var anObject = {
         value1: 23,
         WhatIsValue1: function() {
            return this.value1;
+        },
+        childObject: {
+            value1: 23,
+            WhatIsValue1: function() {
+               return this.value1;
+            },
         }},
         proxyObject,
         handler = function (ctx) { ctx.continue(); };
@@ -110,10 +116,35 @@ test("Verify \"this\" points to the correct object when creating a proxy for a m
     // Create using method on SProxy.
     proxyObject = SProxy.createProxy(anObject, handler);
     assert.strictEqual(anObject.WhatIsValue1(), 23, "The value for \"value1\" is incorrect. Is \"this\" pointing to the right place?");
+    assert.strictEqual(anObject.childObject.WhatIsValue1(), 23, "The value for \"value1\" is incorrect. Is \"this\" pointing to the right place?");
     
     // Create using method on object prototype.
     proxyObject = anObject.createProxy(handler);
     assert.strictEqual(anObject.WhatIsValue1(), 23, "The value for \"value1\" is incorrect. Is \"this\" pointing to the right place?");
+    assert.strictEqual(anObject.childObject.WhatIsValue1(), 23, "The value for \"value1\" is incorrect. Is \"this\" pointing to the right place?");
+});
+
+test("Verify \"this\" points to the object in the handler function.", function (assert) {
+    var obj = {
+            method1: function () { },
+            numProperty: 23,
+            childObject: {
+                method1: function () { },
+                numProperty: 23,
+            },
+        },
+        handler = function (ctx) {
+            this.handlerInvoked = true;
+            
+            assert.strictEqual(this.numProperty, 23, "The handler method should be able to access the object via \"this\".");
+        },
+        proxy = obj.createProxy(handler);
+    
+    proxy.method1();
+    proxy.childObject.method1();
+    
+    assert.strictEqual(proxy.handlerInvoked, true, "The handler function doesn't have access to the object via \"this\".");
+    assert.strictEqual(proxy.childObject.handlerInvoked, true, "The handler function doesn't have access to the object via \"this\".");
 });
 
 test("Verify cancellation of executing the proxied function.", function(assert) {
@@ -201,25 +232,6 @@ test("Verify creating a proxy doesn't alter the original object.", function (ass
     
     assert.strictEqual(obj.method1(), 23, "The original object should not be altered when creating the proxy.");
     assert.strictEqual(proxy.method1(), 45, "The proxy object should return a different value.");
-});
-
-test("Verify the handler function can manipulate the object using \"this\".", function (assert) {
-    var obj = {
-            method1: function () { },
-            boolProperty: false,
-            numProperty: 23
-        },
-        handlerInvoked = false,
-        handler = function (ctx) {
-            handlerInvoked = true;
-            assert.strictEqual(this.boolProperty, false, "The handler method should be able to access the object via \"this\".");
-            assert.strictEqual(this.numProperty, 23, "The handler method should be able to access the object via \"this\".");
-        },
-        proxy = obj.createProxy(handler);
-    
-    proxy.method1();
-    
-    assert.strictEqual(handlerInvoked, true, "The handler was never invoked so the asserts in the handler were not verified.");
 });
 
 test("Verify execution order of nested proxies.", function (assert) {
