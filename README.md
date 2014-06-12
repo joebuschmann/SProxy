@@ -29,20 +29,13 @@ How SProxy.js Works
 
 SProxy.js works by creating a proxy function that combines the original or target function and a handler function. The handler function can add new behavior and/or control access to the target. The handler takes a single argument, an execution context, that provides metadata about the target function and how it is being executed. Most importantly, the execution context exposes a method `continue()` that invokes the target method, and the handler controls access to the target by choosing whether or not to call `continue()`.
 
-Below are all the properties exposed by the execution context.
-
-            returnValue : undefined,
-            arguments : args,
-            continue : function () {
-                var retVal = target.apply(that, args);
-                this.returnValue = retVal;
-            }
+Below are the properties exposed by the execution context.
 
 | Property    | Description |
 | --------    | ----------- |
 | continue()  | Calls the target function. |
 | returnValue | Initially undefined, it holds the return value of the target after `continue()` is called and can be modified by the handler. |
-| arguments   | The arguments passed to the proxy method.|
+| arguments   | The arguments passed to the proxy function.|
 
 Quick Start
 -----------
@@ -156,6 +149,7 @@ And conditionally create proxies based on a filter. What if you only want to pro
     assert.strictEqual(proxy.handlerInvoked, true);
     assert.strictEqual(proxy.childObject.handlerInvoked, true);
 ```
+
 
 **************
 
