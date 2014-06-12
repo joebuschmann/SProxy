@@ -31,11 +31,11 @@ SProxy.js works by creating a proxy function that combines the original or targe
 
 Below are the properties exposed by the execution context.
 
-| Property    | Description |
-| --------    | ----------- |
-| continue()  | Calls the target function. |
-| returnValue | Initially undefined, it holds the return value of the target after `continue()` is called and can be modified by the handler. |
-| arguments   | The arguments passed to the proxy function.|
+| Property     | Description  |
+| :--------    | :----------- |
+| continue()   | Calls the target function. |
+| returnValue  | Initially undefined, it holds the return value of the target after `continue()` is called and can be modified by the handler. |
+| arguments    | The arguments passed to the proxy function.|
 
 Quick Start
 -----------
