@@ -1,0 +1,22 @@
+{
+  "name": "sproxy.js",
+  "version": "1.0.0",
+  "description": "SProxy is a Javascript library for creating proxies for functions and objects.",
+  "main": "tests.js",
+  "devDependencies": {
+    "grunt": "^0.4.5"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joebuschmann/sproxy.js.git"
+  },
+  "author": "Joe Buschmann",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/joebuschmann/sproxy.js/issues"
+  },
+  "homepage": "https://github.com/joebuschmann/sproxy.js"
+}
