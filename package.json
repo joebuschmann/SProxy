@@ -4,7 +4,8 @@
   "description": "SProxy is a Javascript library for creating proxies for functions and objects.",
   "main": "tests.js",
   "devDependencies": {
-    "grunt": "^0.4.5"
+    "grunt": "^0.4.5",
+    "grunt-karma": "^0.8.3"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
