@@ -8,7 +8,6 @@ module.exports = function(grunt) {
         }
     });
 
-//    grunt.loadNpmTasks('grunt-karma');
     grunt.loadNpmTasks('grunt-contrib-qunit');
     grunt.registerTask('default', ['qunit']);
 };
