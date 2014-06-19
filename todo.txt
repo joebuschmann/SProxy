@@ -5,14 +5,16 @@ X 4. Move to a new folder and give project a good name.
 X 5. Add to Github.
 X 6. Create readme.md doc.
 X 7. Add ability to proxy an entire object.
-8. Create Gruntfile to automate tests.
+X 8. Create Gruntfile to automate tests.
 CANCELLED 9. Convert to fluent interface.
 10. Find out how to reference third party libraries in Javascript projects. Add proper references to qunit.
 X 11. Test nesting of before and after functions and verify order of execution.
-12. Write tests to verify exception when bad arguments are passed.
+X 12. Write tests to verify exception when bad arguments are passed.
 X 13. Add proxy creation functions to Object.Prototype().
 14. Research jasmine and grunt+karma.
 X 15. Add ability to filter which methods in an object get a proxy. Pass the property name and function to the filter.
 X 16. Change before and after to onEnter and onExit.
-17. Add onError and onFinish.
+X 17. Add onError and onFinish.
 X 18. Support recursively proxying object properties.
+X 19. Add a mechanism for storing state in between proxy execution. The state should be scoped to the proxy functions.
+X 20. Add a way to get at the proxy function from within the handler in order to set state that should be exposed externally.

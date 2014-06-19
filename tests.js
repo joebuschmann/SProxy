@@ -106,7 +106,7 @@ test("Verify the original method still points to \"this\" when it is proxied.", 
             value1: 23,
             WhatIsValue1: function() {
                return this.value1;
-            },
+            }
         }},
         proxyObject,
         handler = function (ctx) { ctx.continue(); };
@@ -130,8 +130,8 @@ test("Verify \"this\" points to the object in the handler function.", function (
             numProperty: 23,
             childObject: {
                 method1: function () { },
-                numProperty: 23,
-            },
+                numProperty: 23
+            }
         },
         handler = function (ctx) {
             this.handlerInvoked = true;
@@ -365,3 +365,40 @@ test("Conditionally create proxies based on object property values.", function (
     proxy.object2.aMethod();
     assert.strictEqual(callCount, 1, "A proxy should not have been created for object2 because of the filter.");
 });
+
+test("Verify the handler function can store state in between invocations.", function (assert) {
+    var expectedCallCount = undefined;
+    var proxy = SProxy.createProxy(function () {}, function (ctx) {
+        assert.strictEqual(ctx.state.callCount, expectedCallCount);
+
+        if (!ctx.state.callCount) {
+            ctx.state.callCount = 0;
+        }
+
+        ctx.state.callCount++;
+    });
+
+    proxy();
+    expectedCallCount = 1;
+    proxy();
+    expectedCallCount = 2;
+ });
+
+test("Verify the handler function can store state on the proxy function to share with the outside world..", function (assert) {
+    var handler = function (ctx) {
+        assert.notStrictEqual(ctx.proxyFunction, undefined);
+
+        if (!ctx.proxyFunction.callCount) {
+            ctx.proxyFunction.callCount = 0;
+        }
+
+        ctx.proxyFunction.callCount++;
+    };
+
+    var proxy1 = SProxy.createProxy(function () {}, handler);
+
+    proxy1();
+    assert.strictEqual(proxy1.callCount, 1);
+    proxy1();
+    assert.strictEqual(proxy1.callCount, 2);
+ });

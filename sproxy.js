@@ -9,10 +9,12 @@ var installSProxy = function (ctx) {
         return new Proxy();
     };
     
-    var makeExecutionContext = function (target, args, that) {
+    var makeExecutionContext = function (target, args, that, handlerState, proxy) {
         return {
             returnValue : undefined,
             arguments : args,
+            state : handlerState,
+            proxyFunction : proxy,
             continue : function () {
                 var retVal = target.apply(that, args);
                 this.returnValue = retVal;
@@ -20,15 +22,18 @@ var installSProxy = function (ctx) {
         };
     };
     
-    var createProxyFunction = function (target, handler, context) {        
-        return function () {
-            var that = context || this,
-                executionContext = makeExecutionContext(target, arguments, that);
-            
-            handler.call(that, executionContext);
-            
-            return executionContext.returnValue;
+    var createProxyFunction = function (target, handler, context) {
+        var handlerState = {},
+            proxy = function () {
+                var that = context || this,
+                    executionContext = makeExecutionContext(target, arguments, that, handlerState, proxy);
+
+                handler.call(that, executionContext);
+
+                return executionContext.returnValue;
         };
+
+        return proxy;
     };
     
     var createProxyObject = function (obj, handler, filter) {        
