@@ -31,11 +31,13 @@ SProxy.js works by creating a proxy function that combines the original or targe
 
 Below are the properties exposed by the execution context.
 
-| Property     | Description  |
-| :--------    | :----------- |
-| continue()   | Calls the target function. |
-| returnValue  | Initially undefined, it holds the return value of the target after `continue()` is called and can be modified by the handler. |
-| arguments    | The arguments passed to the proxy function.|
+| Property      | Description  |
+| :--------     | :----------- |
+| continue()    | Calls the target function. |
+| returnValue   | Initially undefined, it holds the return value of the target after `continue()` is called and can be modified by the handler. |
+| arguments     | The arguments passed to the proxy function.|
+| state         | A persistent object (initially empty) used for storing state between handler invocations. |
+| proxyFunction | A reference to the proxy function that invoked the handler. |
 
 Quick Start
 -----------
@@ -150,6 +152,56 @@ And conditionally create proxies based on a filter. What if you only want to pro
     assert.strictEqual(proxy.childObject.handlerInvoked, true);
 ```
 
+If you need to store state between invocations of a proxy, you can use the `state` property on the execution context.
+
+```Javascript
+    var func = function () {};
+    var callCount = 0;
+    var handler = function (ctx) {
+            if (!ctx.state.callCount) {
+                ctx.state.callCount = 1;
+            } else {
+                ctx.state.callCount++;
+            }
+
+            callCount = ctx.state.callCount;
+        };
+
+    var proxy = func.createProxy(handler);
+
+    proxy();
+    assert.strictEqual(callCount, 1);
+
+    proxy();
+    assert.strictEqual(callCount, 2);
+
+    proxy();
+    assert.strictEqual(callCount, 3);
+```
+
+You also have access to the proxy function via the `proxyFunction` property.
+
+```Javascript
+    var func = function () {};
+    var handler = function (ctx) {
+            if (!ctx.proxyFunction.callCount) {
+                ctx.proxyFunction.callCount = 1;
+            } else {
+                ctx.proxyFunction.callCount++;
+            }
+        };
+
+    var proxy = func.createProxy(handler);
+
+    proxy();
+    assert.strictEqual(proxy.callCount, 1);
+
+    proxy();
+    assert.strictEqual(proxy.callCount, 2);
+
+    proxy();
+    assert.strictEqual(proxy.callCount, 3);
+```
 
 **************
 

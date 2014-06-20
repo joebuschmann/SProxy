@@ -115,3 +115,50 @@ test("README Sample 6: \"this\" points to the object and not global", function (
     assert.strictEqual(proxy.handlerInvoked, true);
     assert.strictEqual(proxy.childObject.handlerInvoked, true);
 });
+
+test("README Sample 7: Storing state between invocations of the handler", function (assert) {
+    var func = function () {};
+    var callCount = 0;
+    var handler = function (ctx) {
+            if (!ctx.state.callCount) {
+                ctx.state.callCount = 1;
+            } else {
+                ctx.state.callCount++;
+            }
+
+            callCount = ctx.state.callCount;
+        };
+
+    var proxy = func.createProxy(handler);
+
+    proxy();
+    assert.strictEqual(callCount, 1);
+
+    proxy();
+    assert.strictEqual(callCount, 2);
+
+    proxy();
+    assert.strictEqual(callCount, 3);
+});
+
+test("README Sample 8: Accessing the proxy function", function (assert) {
+    var func = function () {};
+    var handler = function (ctx) {
+            if (!ctx.proxyFunction.callCount) {
+                ctx.proxyFunction.callCount = 1;
+            } else {
+                ctx.proxyFunction.callCount++;
+            }
+        };
+
+    var proxy = func.createProxy(handler);
+
+    proxy();
+    assert.strictEqual(proxy.callCount, 1);
+
+    proxy();
+    assert.strictEqual(proxy.callCount, 2);
+
+    proxy();
+    assert.strictEqual(proxy.callCount, 3);
+});
