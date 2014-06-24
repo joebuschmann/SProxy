@@ -1,13 +1,15 @@
 module.exports = function(grunt) {
 
-    // Project configuration.
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
-        qunit: {
-            all: ['index.html']
+        jasmine : {
+            src : 'src/*.js',
+            options : {
+                specs : 'spec/*.js'
+            }
         }
     });
 
-    grunt.loadNpmTasks('grunt-contrib-qunit');
-    grunt.registerTask('default', ['qunit']);
+    grunt.loadNpmTasks('grunt-contrib-jasmine');
+    grunt.registerTask('default', ['jasmine']);
 };
