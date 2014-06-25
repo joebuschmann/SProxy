@@ -1,4 +1,24 @@
 
+describe("SProxy installation options include", function () {
+    it("the SProxy namespace.", function () {
+        expect(SProxy).toBeDefined();
+        expect(SProxy.createProxy).toBeDefined();
+    });
+
+    it("the Object prototype.", function () {
+        expect(Object.createProxy).toBeDefined();
+    });
+
+    it("a custom object.", function () {
+        // Install into a custom object.
+        var customContext = {};
+
+        installSProxy(customContext);
+
+        expect(customContext.createProxy).toBeDefined();
+    });
+});
+
 describe("A simple use case scenario", function () {
     it("consists of a before action, invocation of continue(), and an after action.", function () {
         var beforeInvocationCount = 0;
