@@ -23,8 +23,9 @@ var installSProxy = function (ctx) {
     };
     
     var createProxyFunction = function (target, handler, context) {
-        var handlerState = {},
-            proxy = function () {
+        var handlerState = {};
+
+        return function proxy () {
                 var that = context || this,
                     executionContext = makeExecutionContext(target, arguments, that, handlerState, proxy);
 
@@ -32,8 +33,6 @@ var installSProxy = function (ctx) {
 
                 return executionContext.returnValue;
         };
-
-        return proxy;
     };
     
     var createProxyObject = function (obj, handler, filter) {        
@@ -54,8 +53,6 @@ var installSProxy = function (ctx) {
                     }
                 }
                 else if (typeof (propValue) === "object") {
-                    
-                    
                     if (filter(propName, propValue)) {
                         proxy[propName] = createProxyObject(propValue, handler, filter);
                     }
