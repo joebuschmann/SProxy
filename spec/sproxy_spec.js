@@ -409,11 +409,17 @@ describe("State can be stored between invocations of a proxy function", function
         };
 
         var proxy1 = SProxy.createProxy(function () {}, handler);
+        var proxy2 = SProxy.createProxy(function () {}, handler);
 
         proxy1();
         expect(proxy1.callCount).toBe(1);
         proxy1();
         expect(proxy1.callCount).toBe(2);
+
+        proxy2();
+        expect(proxy2.callCount).toBe(1);
+        proxy2();
+        expect(proxy2.callCount).toBe(2);
     });
 });
 
